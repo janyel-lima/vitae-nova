@@ -1,0 +1,6 @@
+{
+  "name": "Currículo Beatriz Gerônimo Nunes",
+  "description": "Um gerador e visualizador de currículo elegante, interativo e otimizado para impressão de Beatriz Gerônimo Nunes, com suporte para modo moderno colorido online e modo empresarial sério para PDF.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
