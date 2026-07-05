@@ -1,6 +1,6 @@
 {
-  "name": "Currículo Beatriz Gerônimo Nunes",
-  "description": "Um gerador e visualizador de currículo elegante, interativo e otimizado para impressão de Beatriz Gerônimo Nunes, com suporte para modo moderno colorido online e modo empresarial sério para PDF.",
+  "name": "Ateliê de Currículo Profissional",
+  "description": "Um gerador e visualizador de currículo elegante, interativo e otimizado para impressão de folha única A4, com suporte para modelos moderno colorido e editorial corporativo em P&B.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

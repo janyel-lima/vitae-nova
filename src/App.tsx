@@ -3,38 +3,45 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  Check,
-  ChevronLeft,
-  ChevronRight,
+  Sparkles,
   Edit3,
   Eye,
-  Globe,
-  HelpCircle,
-  Info,
-  Instagram,
-  Link as LinkIcon,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
   Printer,
   RotateCcw,
-  Sliders,
-  Sparkle,
+  AlertTriangle,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Plus,
   Trash2,
+  HelpCircle,
+  FileText,
+  Sliders,
+  X,
+  MapPin,
+  Mail,
+  Phone,
+  Link as LinkIcon,
+  BookOpen,
+  Briefcase,
+  Wrench,
+  Globe,
+  Info,
+  ArrowUp,
+  ArrowDown,
+  Sparkle,
+  Instagram,
   Twitter,
-  X
+  Github,
+  Palette
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
 
-// Types corresponding to Beatriz's premium CV
+// Types corresponding to Offline Premium CV
 interface EducationItem {
   id: string;
   degree: string;
@@ -83,6 +90,9 @@ interface CVData {
   skype?: string;
   twitter?: string;
   instagram?: string;
+  github?: string;
+  behance?: string;
+  website?: string;
   objective: string;
   education: EducationItem[];
   experience: ExperienceItem[];
@@ -125,9 +135,9 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
 
     const replacement = before + selected + after;
     const newValue = text.substring(0, start) + replacement + text.substring(end);
-
+    
     onChange(newValue);
-
+    
     // Restore selection/focus after state update on next tick
     setTimeout(() => {
       textarea.focus();
@@ -144,7 +154,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
     const end = textarea.selectionEnd;
     const text = textarea.value;
     const selected = text.substring(start, end);
-
+    
     if (selected.includes("\n")) {
       const updated = selected.split("\n").map(line => line.startsWith("• ") ? line : "• " + line).join("\n");
       insertText("", updated);
@@ -169,7 +179,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
     <div className="space-y-1.5" id={id}>
       <div className="flex items-center justify-between">
         <label className="block text-[10px] font-bold uppercase text-slate-400">{label}</label>
-
+        
         {/* Editor Toolbar with non-technical, user-friendly tags */}
         <div className="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-900/80">
           <button
@@ -216,7 +226,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
           rows={rows}
           className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded p-2 text-xs text-slate-200 outline-none resize-none leading-relaxed focus:ring-1 focus:ring-blue-500/20"
         />
-
+        
         {/* Helper Badge */}
         <div className="absolute right-2 bottom-1.5 text-[8px] text-slate-500 select-none pointer-events-none group-focus-within:opacity-0 transition-opacity">
           Editor Avançado ✨
@@ -244,79 +254,82 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
 };
 
 const DEFAULT_CV: CVData = {
-  name: "Beatriz Gerônimo Nunes",
-  title: "Profissional Multidisciplinar & Estudante de Direito",
-  phone: "(82) 99613-9592",
-  email: "beatriznunes0922@gmail.com",
-  location: "Palmeira dos Índios – AL",
-  linkedin: "linkedin.com/in/beatriz-geronimo-nunes",
-  skype: "skype.beatrizn",
-  twitter: "beatriz_gnunes",
-  instagram: "@beatriz.gn",
-  objective: "Profissional dedicada, proativa e com excelente comunicação interpessoal. Busco uma oportunidade para aplicar e desenvolver minhas habilidades nas corporações, contribuindo com o crescimento institucional por meio de suporte jurídico primário, atendimento acolhedor ao cliente e racionalização de rotinas burocráticas.",
+  name: "Alexandre Silva Santos",
+  title: "Desenvolvedor Front-End & UI/UX Designer",
+  phone: "(11) 98765-4321",
+  email: "alexandre.silva@email.com",
+  location: "São Paulo – SP",
+  linkedin: "linkedin.com/in/alexandre-silva",
+  github: "github.com/alexandre-silva",
+  behance: "behance.net/alexandre-silva",
+  website: "alexandre-silva.dev",
+  skype: "skype.alexandre",
+  twitter: "@alex_silvadesign",
+  instagram: "@alexandre.design",
+  objective: "Profissional criativo e focado em resultados, com sólida formação prática na criação de interfaces digitais responsivas e identidades visuais modernas. Busco uma oportunidade para agregar valor aos projetos da empresa por meio de soluções de desenvolvimento front-end elegantes, design centrado no usuário e metodologias de trabalho organizadas.",
   picture: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250&h=250",
   education: [
     {
       id: "edu_1",
-      degree: "Ensino Médio Completo",
-      institution: "Complexo Educacional Agostiniano",
-      period: "2016",
-      location: "Palmeira dos Índios – AL",
+      degree: "Superior em Design e Tecnologia (Bacharelado)",
+      institution: "Universidade Paulista de Tecnologia",
+      period: "2020 – 2024",
+      location: "São Paulo – SP",
       status: "Concluído",
-      description: "Excelência acadêmica com engajamento expressivo em debates, comissões estudantis e oratória."
+      description: "Foco principal em engenharia de usabilidade, prototipagem de alta fidelidade e design de sistemas digitais modernos."
     },
     {
       id: "edu_2",
-      degree: "Superior em Direito (6º Período)",
-      institution: "CESMAC do Sertão",
-      period: "2022 – presente",
-      location: "Arapiraca – AL",
-      status: "Em andamento",
-      description: "Desenvolvimento de competências em redação jurídica, mediação de conflitos e análise hermenêutica sistemática."
+      degree: "Técnico em Desenvolvimento para Internet",
+      institution: "Escola Técnica Estadual de TI",
+      period: "2018 – 2020",
+      location: "São Paulo – SP",
+      status: "Concluído",
+      description: "Sólida base em linguagens de marcação, lógica de programação, banco de dados e arquitetura web cliente-servidor."
     }
   ],
   experience: [
     {
       id: "exp_1",
-      role: "Atendimento & Assistência Administrativa",
-      company: "Estudante Disponível para Contratação",
-      period: "Início Imediato",
-      location: "Palmeira dos Índios – AL",
-      description: "Buscando admissão inicial ou estágio institucional focados nos âmbitos de atendimento, secretaria jurídica ou suporte geral ao setor operacional privado.",
+      role: "Designer Visual & Desenvolvedor Front-End",
+      company: "Estúdio de Soluções Digitais",
+      period: "2021 – presente",
+      location: "São Paulo – SP",
+      description: "Atuação direta em projetos de concepção e implementação de interfaces interativas, landing pages de alta conversão e materiais institucionais digitais.",
       bullets: [
-        "Sólida base na redação de comunicações formais, requerimentos e sínteses processuais organizadas.",
-        "Comportamento altamente empático focado na intermediação de contatos e no atendimento de qualidade ao público.",
-        "Facilidade na apropriação e uso diário de ecossistemas web, preenchimento de planilhas de controle e CRM corporativos."
+        "Codificação de layouts responsivos sob medida com excelente compatibilidade móvel usando React e Tailwind CSS.",
+        "Desenvolvimento de protótipos navegáveis detalhados no Figma, otimizando o fluxo de navegação do usuário final.",
+        "Planejamento de marcas e aplicação consistente de design systems corporativos escaláveis."
       ]
     }
   ],
   skills: [
-    { id: "sk_1", name: "Atendimento ao cliente & Recepção", level: 90 },
-    { id: "sk_2", name: "Comunicação interpessoal & Empatia", level: 95 },
-    { id: "sk_3", name: "Organização documental & Arquivos", level: 85 },
-    { id: "sk_4", name: "Redação formal & Terminologia básica de Direito", level: 90 },
-    { id: "sk_5", name: "Tecnologia, Pacote Office e Sistemas Web", level: 80 }
+    { id: "sk_1", name: "Desenvolvimento Front-End (React, JS, HTML/CSS)", level: 90 },
+    { id: "sk_2", name: "Figma, UI/UX Design & Prototipagem", level: 95 },
+    { id: "sk_3", name: "Versionamento com Git & Fluxos GitHub", level: 85 },
+    { id: "sk_4", name: "Identidade Visual & Direção de Arte", level: 80 },
+    { id: "sk_5", name: "Comunicação Eficiente & Trabalho em Equipe", level: 90 }
   ],
   languages: [
     { id: "lang_1", name: "Português", level: "Nativo" },
-    { id: "lang_2", name: "Inglês", level: "Básico (Compreensão Textual)" }
+    { id: "lang_2", name: "Inglês", level: "Avançado (Comunicação Fluente)" }
   ],
-  references: "Informações de contato e referências docentes/profissionais disponíveis mediante solicitação.",
+  references: "Informações adicionais de contato e referências docentes disponíveis mediante solicitação.",
   courses: [
     {
       id: "course_1",
-      name: "Participações regulares em Congressos Jurídicos Regionais do Sertão Alagoano",
-      year: "2022-2024"
-    },
-    {
-      id: "course_2",
-      name: "Curso Intensivo Extracurricular de Oratória Assertiva e Negociação",
+      name: "Especialização Avançada em Acessibilidade Web e Diretrizes WCAG",
       year: "2023"
     },
     {
+      id: "course_2",
+      name: "Curso Intensivo de Design de Interfaces e Componentização no Figma",
+      year: "2022"
+    },
+    {
       id: "course_3",
-      name: "Organização ativa de campanhas beneficentes de agasalho e apoio social regional",
-      year: ""
+      name: "Workshop Prático de Frameworks CSS Modernos e Layout Responsivo",
+      year: "2021"
     }
   ]
 };
@@ -383,7 +396,7 @@ function getAccentColor(hex: string): string {
 const tutorialSteps = [
   {
     title: "1. Escolher o Visual do seu Currículo 🎨",
-    text: "Oi, Beatriz! Aqui em cima você escolhe o seu modelo favorito com um toque. Você pode alternar entre o 'Modo Colorido' (com lindos tons e layouts dinâmicos) e o clássico 'P&B Editorial' (visual refinado em preto e branco tradicional de revistas). Sinta-se livre para testar as duas versões!",
+    text: "Olá! Aqui em cima você escolhe o seu modelo favorito com um toque. Você pode alternar entre o 'Modo Colorido' (com lindos tons e layouts dinâmicos) e o clássico 'P&B Editorial' (visual refinado em preto e branco tradicional de revistas). Sinta-se livre para testar as duas versões!",
     anchorId: "style-tab-trigger",
   },
   {
@@ -402,7 +415,7 @@ const tutorialSteps = [
     anchorId: "overflow-badge",
   },
   {
-    title: "5. Baixar o PDF dos Sonhos 📥",
+    title: "5. Baixar o PDF Oficial 📥",
     text: "Quando o seu currículo estiver do jeito que você quer, basta clicar em 'Baixar PDF'. Geraremos uma cópia vetorizada e profissional, perfeita para enviar por WhatsApp ou imprimir!",
     anchorId: "print-pdf-trigger",
   }
@@ -410,7 +423,7 @@ const tutorialSteps = [
 
 export default function App() {
   const [cvData, setCvData] = useState<CVData>(() => {
-    const saved = localStorage.getItem("beatriz_cv_premium_v2");
+    const saved = localStorage.getItem("offline_cv_data_v2");
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -422,10 +435,10 @@ export default function App() {
   });
 
   const [primaryColor, setPrimaryColor] = useState<string>(() => {
-    return localStorage.getItem("beatriz_cv_primary_color") || "#0d0f25";
+    return localStorage.getItem("offline_cv_primary_color") || "#0d0f25";
   });
   const [colorIntensity, setColorIntensity] = useState<number>(() => {
-    return Number(localStorage.getItem("beatriz_cv_color_intensity") || "100");
+    return Number(localStorage.getItem("offline_cv_color_intensity") || "100");
   });
   const [showPrintHelper, setShowPrintHelper] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
@@ -437,42 +450,42 @@ export default function App() {
 
   // Fine-grained font sizes
   const [fontSizeName, setFontSizeName] = useState<number>(() => {
-    return Number(localStorage.getItem("beatriz_cv_fs_name") || "26");
+    return Number(localStorage.getItem("offline_cv_fs_name") || "26");
   });
   const [fontSizeTitle, setFontSizeTitle] = useState<number>(() => {
-    return Number(localStorage.getItem("beatriz_cv_fs_title") || "10");
+    return Number(localStorage.getItem("offline_cv_fs_title") || "10");
   });
   const [fontSizeSection, setFontSizeSection] = useState<number>(() => {
-    return Number(localStorage.getItem("beatriz_cv_fs_section") || "10");
+    return Number(localStorage.getItem("offline_cv_fs_section") || "10");
   });
   const [fontSizeBody, setFontSizeBody] = useState<number>(() => {
-    return Number(localStorage.getItem("beatriz_cv_fs_body") || "9");
+    return Number(localStorage.getItem("offline_cv_fs_body") || "9");
   });
   const [fontSizeSidebar, setFontSizeSidebar] = useState<number>(() => {
-    return Number(localStorage.getItem("beatriz_cv_fs_sidebar") || "9");
+    return Number(localStorage.getItem("offline_cv_fs_sidebar") || "9");
   });
 
   // Fine-grained spacings
   const [customSectionSpacing, setCustomSectionSpacing] = useState<number>(() => {
-    return Number(localStorage.getItem("beatriz_cv_spacing_section") || "14");
+    return Number(localStorage.getItem("offline_cv_spacing_section") || "14");
   });
   const [customLineHeight, setCustomLineHeight] = useState<number>(() => {
-    return Number(localStorage.getItem("beatriz_cv_spacing_line") || "140"); // in percent (140% = 1.4)
+    return Number(localStorage.getItem("offline_cv_spacing_line") || "140"); // in percent (140% = 1.4)
   });
 
   // Black & White specific custom states
   const [bwBorderStyle, setBwBorderStyle] = useState<"solid" | "dashed" | "double">(() => {
-    return (localStorage.getItem("beatriz_cv_bw_border") as any) || "solid";
+    return (localStorage.getItem("offline_cv_bw_border") as any) || "solid";
   });
   const [bwPhotoGrayscale, setBwPhotoGrayscale] = useState<boolean>(() => {
-    return localStorage.getItem("beatriz_cv_bw_photo_gray") !== "false";
+    return localStorage.getItem("offline_cv_bw_photo_gray") !== "false";
   });
 
   // Format states
   const [fontSizeScale, setFontSizeScale] = useState<"xs" | "sm" | "md" | "lg">("sm");
   const [lineHeightScale, setLineHeightScale] = useState<"tight" | "normal" | "relaxed">("normal");
   const [sectionMargin, setSectionMargin] = useState<"tight" | "normal" | "relaxed">("normal");
-
+  
   // Section visibility states (Simple language toggles)
   const [hidePicture, setHidePicture] = useState<boolean>(false);
   const [hideObjective, setHideObjective] = useState<boolean>(false);
@@ -500,22 +513,22 @@ export default function App() {
       return [
         {
           title: "1. Escolher o Modelo do seu Currículo 🎨",
-          text: "Seja muito bem-vinda ao seu moderno ateliê de currículos, Mi Lady! Aqui em cima, com apenas um toque simples, você consegue escolher a aparência geral do seu documento. Utilize o 'Modo Colorido' se desejar tons modernos e dinâmicos, ou o clássico 'P&B Editorial' para um visual super elegante em preto e branco tradicional de altíssima qualidade. Toque sempre que quiser experimentar novas combinações!",
+          text: "Seja bem-vinto(a) ao seu moderno ateliê de currículos! Aqui em cima, com apenas um toque simples, você consegue escolher a aparência geral do seu documento. Utilize o 'Modo Colorido' se desejar tons modernos e dinâmicos, ou o clássico 'P&B Editorial' para um visual super elegante em preto e branco tradicional de altíssima qualidade. Toque sempre que quiser experimentar novas combinações!",
           anchorId: "style-tab-trigger",
         },
         {
           title: "2. Habilitar o Modo Edição ✨",
-          text: "Neste momento, as pastas de personalização estão recolhidas para manter o seu currículo bem limpo e asseado na tela, Mi Lady. Para abrir suas gavetas de escrita e começar a mudar os contatos e histórias, basta clicar no botão 'Customizar' bem aqui. Toque em 'Avançar' que eu ativo a edição para você agora mesmo!",
+          text: "Neste momento, os painéis de personalização estão recolhidos para manter a visualização limpa e focada. Para abrir suas abas de escrita e começar a mudar os contatos e histórias, basta clicar no botão 'Customizar' bem aqui. Toque em 'Avançar' que eu ativo a edição para você agora mesmo!",
           anchorId: "customizar-trigger",
         },
         {
           title: "3. O Indicador de Página Única 🟢",
-          text: "Para que o seu currículo fique impecável, o ideal é que ele caiba inteirinho em uma única folha física. Este indicador é o seu assistente inteligente, Mi Lady: ele fica verdinho se tudo couber sob medida, ou avisa em vermelho se passar do espaço ideal de papel para que possa fazer pequenos ajustes!",
+          text: "Para que o seu currículo fique impecável, o ideal é que ele caiba inteirinho em uma única folha física. Este indicador é o seu assistente inteligente: ele fica verdinho se tudo couber sob medida, ou avisa em vermelho se passar do espaço ideal de papel para que possa fazer pequenos ajustes!",
           anchorId: "overflow-badge",
         },
         {
           title: "4. Baixar o seu PDF Oficial 📥",
-          text: "Prontinho, Mi Lady! Quando os seus dados estiverem perfeitos e brilhando, basta tocar em 'Baixar PDF' para salvá-lo com altíssima qualidade editorial, prontinho para mandar pelo WhatsApp ou imprimir quando quiser!",
+          text: "Prontinho! Quando os seus dados estiverem perfeitos, basta tocar em 'Baixar PDF' para salvá-lo com altíssima qualidade editorial, prontinho para mandar pelo WhatsApp ou imprimir quando quiser!",
           anchorId: "print-pdf-trigger",
         }
       ];
@@ -523,47 +536,47 @@ export default function App() {
       return [
         {
           title: "1. Escolher o Modelo do seu Currículo 🎨",
-          text: "Seja muito bem-vinda ao seu moderno ateliê de currículos, Mi Lady! Aqui em cima, com apenas um toque simples, você escolhe se prefere o elegante 'Modo Colorido' ou o clássico 'P&B Editorial' de revista. Sinta-se à vontade para testar!",
+          text: "Seja bem-vindo(a) ao seu moderno ateliê de currículos! Aqui em cima, com apenas um toque simples, você escolhe se prefere o elegante 'Modo Colorido' ou o clássico 'P&B Editorial' de revista. Sinta-se à vontade para testar!",
           anchorId: "style-tab-trigger",
         },
         {
           title: "2. Pasta 1: Detalhes de Contato 📞",
-          text: "Com o seu toque, abrimos a primeira gaveta de dados, Mi Lady! Aqui você preenche telefone, e-mail, redes extras e foto com todo o cuidado. Fica super fácil para as empresas encontrarem você rapidamente!",
+          text: "Aqui você preenche telefone, e-mail, links de portfólio (como GitHub, Behance e seu site pessoal), redes extras e foto com todo o cuidado. Fica super fácil para as empresas encontrarem você rapidamente!",
           anchorId: "tab-contato",
         },
         {
-          title: "3. Pasta 2: Perfil e Resumo 🌸",
-          text: "Nesta gaveta, escreva sobre seus objetivos e qualidades profissionais, Mi Lady. Repare que todos os campos longos agora contam com o inovador **Editor Avançado ✨** no topo! Você pode selecionar trechos com o mouse e destacar palavras em negrito (N), itálico (I), converter tudo em maiúsculas (aA) ou fazer uma listinha numerada ou com bolinhas (• Marcador).",
+          title: "3. Pasta 2: Perfil e Resumo 📝",
+          text: "Nesta aba, escreva sobre seus objetivos e qualidades profissionais. Repare que todos os campos longos agora contam com o inovador **Editor Avançado ✨** no topo! Você pode selecionar trechos com o mouse e destacar palavras em negrito (N), itálico (I), converter tudo em maiúsculas (aA) ou fazer uma listinha numerada ou com bolinhas (• Marcador).",
           anchorId: "tab-perfil",
         },
         {
           title: "4. Pasta 3: Formação Acadêmica 🎓",
-          text: "O canto ideal para registrar suas escolas, faculdade ou cursos técnicos, Mi Lady. Você pode tocar em 'Adicionar' para abrir novos campos organizados, reordenar as linhas ou excluir registros num piscar de olhos.",
+          text: "O local ideal para registrar sua escolaridade, faculdade ou cursos técnicos. Você pode tocar em 'Adicionar' para abrir novos campos organizados, reordenar as linhas ou excluir registros num piscar de olhos.",
           anchorId: "tab-estudos",
         },
         {
           title: "5. Pasta 4: Experiências e Trabalhos 💼",
-          text: "Aqui, relate seus trabalhos anteriores e funções com bastante clareza, Mi Lady. Use as opções do Editor Avançado para organizar suas conquistas e responsabilidades usando marcadores limpos de fácil leitura.",
+          text: "Aqui, relate seus trabalhos anteriores e funções com bastante clareza. Use as opções do Editor Avançado para organizar suas conquistas e responsabilidades usando marcadores limpos de fácil leitura.",
           anchorId: "tab-carreiras",
         },
         {
           title: "6. Pasta 5: Competências & Cursos Cadastrados 🏅",
-          text: "Exiba suas principais habilidades e selecione o nível ideal de cada uma. É nesta pasta também que você gerencia a **Lista de Cursos e Atividades Complementares**, Mi Lady! Adicione seus certificados como itens separados e nós cuidaremos para que fiquem alinhados com absoluto requinte e perfeição no design do seu currículo físico.",
+          text: "Exiba suas principais habilidades e selecione o nível ideal de cada uma. É nesta pasta também que você gerencia a **Lista de Cursos e Atividades Complementares**! Adicione seus certificados como itens separados e nós cuidaremos para que fiquem alinhados com absoluto requinte e perfeição no design do seu currículo físico.",
           anchorId: "tab-habilidades",
         },
         {
           title: "7. Pasta 6: Customização de Aparência ⚙️",
-          text: "Esta última pasta é pura magia, Mi Lady! Se as letras ficarem um pouquinho grandes para caber em uma folha, ou se quiser aumentar as margens, basta arrastar as linhas de regulagem simples. Tudo muda na tela ao mesmo tempo, de forma bem descomplicada para você ajustar no tamanho perfeito.",
+          text: "Esta pasta contém ferramentas de ajuste precisas! Se as letras ficarem um pouquinho grandes para caber em uma folha, ou se quiser aumentar ou diminuir as margens, basta arrastar as linhas de regulagem simples. Tudo muda na tela ao mesmo tempo, de forma bem descomplicada para você ajustar no tamanho perfeito.",
           anchorId: "tab-personalizacao",
         },
         {
           title: "8. O Indicador de Página Única 🟢",
-          text: "Este círculozinho inteligente monitora o tamanho do papel físico para você, Mi Lady! Se tudo estiver couber perfeitamente em uma única página, ele ficará verdinho. Se passar um pouco, basta reduzir as fontes ou margens na Pasta 6!",
+          text: "Este indicador monitora o tamanho do papel físico para você! Se tudo couber perfeitamente em uma única página, ele ficará verdinho. Se passar um pouco, basta reduzir as fontes ou margens na Pasta 6!",
           anchorId: "overflow-badge",
         },
         {
           title: "9. Baixar o seu PDF Oficial 📥",
-          text: "Quando terminar de preencher as informações e o seu currículo estiver radiante, basta que Mi Lady clique neste lindo botão verde. Nós geraremos o seu PDF oficial com qualidade profissional impecável!",
+          text: "Quando terminar de preencher as informações e o seu currículo estiver pronto, basta clicar neste botão verde. Nós geraremos o seu PDF oficial com excelente qualidade!",
           anchorId: "print-pdf-trigger",
         }
       ];
@@ -611,17 +624,17 @@ export default function App() {
       const step = currentSteps[tourStep];
       if (!step) return;
       const element = document.getElementById(step.anchorId);
-
+      
       if (element) {
         // Scroll target element gently into view if needed
         element.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
-
+        
         const rect = element.getBoundingClientRect();
         setHighlightRect(rect);
 
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-
+        
         let top = rect.bottom + window.scrollY + 12;
         let left = rect.left + window.scrollX + (rect.width / 2) - 180;
         let placement = "bottom";
@@ -641,11 +654,11 @@ export default function App() {
             left = rect.right + window.scrollX + 20;
             placement = "right";
           } else if (
-            step.anchorId === "tab-contato" ||
-            step.anchorId === "tab-perfil" ||
-            step.anchorId === "tab-estudos" ||
-            step.anchorId === "tab-carreiras" ||
-            step.anchorId === "tab-habilidades" ||
+            step.anchorId === "tab-contato" || 
+            step.anchorId === "tab-perfil" || 
+            step.anchorId === "tab-estudos" || 
+            step.anchorId === "tab-carreiras" || 
+            step.anchorId === "tab-habilidades" || 
             step.anchorId === "tab-personalizacao"
           ) {
             top = rect.top + window.scrollY - 10;
@@ -662,8 +675,8 @@ export default function App() {
           }
         } else {
           // Mobile responsive layout
-          top = rect.top > viewportHeight / 2
-            ? rect.top + window.scrollY - 220
+          top = rect.top > viewportHeight / 2 
+            ? rect.top + window.scrollY - 220 
             : rect.bottom + window.scrollY + 12;
           left = rect.left + window.scrollX + (rect.width / 2) - 170;
           placement = rect.top > viewportHeight / 2 ? "top" : "bottom";
@@ -693,7 +706,7 @@ export default function App() {
 
     window.addEventListener("resize", updateTourGeometry);
     window.addEventListener("scroll", updateTourGeometry, { passive: true });
-
+    
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -745,7 +758,7 @@ export default function App() {
   useEffect(() => {
     const checkHeight = () => {
       if (cvSheetRef.current) {
-        // High fidelity ratio simulation for A4. Height in standard display should not exceed ~1130px
+        // High fidelity ratio simulation for A4. Height in standard display should not exceed ~1130px 
         // to avoid spilling onto page 2 unexpectedly.
         const height = cvSheetRef.current.scrollHeight;
         if (height > 1150) {
@@ -756,7 +769,7 @@ export default function App() {
       }
     };
     checkHeight();
-
+    
     // Add brief timing trigger to check after state updates
     const timer = setTimeout(checkHeight, 300);
     return () => clearTimeout(timer);
@@ -793,7 +806,7 @@ export default function App() {
     setIsGeneratingPdf(true);
     try {
       const element = cvSheetRef.current;
-
+      
       // Give the browser a brief moment to update any visual details
       await new Promise((resolve) => setTimeout(resolve, 150));
 
@@ -823,7 +836,7 @@ export default function App() {
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-
+      
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
       const imgHeightInPdf = (canvasHeight * pdfWidth) / canvasWidth;
@@ -1163,7 +1176,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-300 print:bg-white print:text-black antialiased selection:bg-blue-600 selection:text-white">
-
+      
       {/* Dynamic Native Styling Block strictly for A4 physical outputs */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@400;500;700&display=swap');
@@ -1211,7 +1224,7 @@ export default function App() {
             page-break-inside: avoid !important;
           }
         }
-
+        
         .a4-container {
           width: 210mm;
           min-height: 297mm;
@@ -1333,7 +1346,7 @@ export default function App() {
               <Sparkle className="text-blue-400 fill-blue-400 animate-pulse shrink-0" size={16} />
               <span className="truncate">{currentSteps[tourStep].title}</span>
             </h4>
-
+            
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
               {currentSteps[tourStep].text}
             </p>
@@ -1348,7 +1361,7 @@ export default function App() {
                 <ChevronLeft size={14} />
                 <span>Anterior</span>
               </button>
-
+              
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setTourStep(null)}
@@ -1384,7 +1397,7 @@ export default function App() {
           <div className="flex items-center gap-3 w-full lg:w-auto">
             <div className="relative shrink-0">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white font-extrabold shadow-lg text-sm">
-                BG
+                CV
               </div>
               <span className="absolute -bottom-1 -right-1 bg-sky-500 text-slate-950 font-bold px-0.5 py-px rounded text-[8px] border border-slate-950 leading-none">
                 PRO
@@ -1393,10 +1406,10 @@ export default function App() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight leading-none">
-                  Ateliê de Currículo Beatriz G. Nunes
+                  Ateliê de Currículo Profissional
                 </h1>
                 <span className="bg-blue-500/10 text-blue-400 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-blue-500/20 leading-none shrink-0">
-                  Modo Editor Active
+                  Modo Editor Ativo
                 </span>
               </div>
               <p className="text-[10px] sm:text-xs text-slate-400 mt-1 line-clamp-1 sm:line-clamp-none max-w-[620px]">
@@ -1405,8 +1418,8 @@ export default function App() {
             </div>
           </div>
 
-          <div
-            id="style-tab-trigger"
+          <div 
+            id="style-tab-trigger" 
             className={`flex flex-wrap items-center justify-center lg:justify-end gap-2.5 transition-all duration-300 w-full lg:w-auto ${
               tourStep === 0
                 ? "ring-4 ring-sky-500 ring-offset-4 ring-offset-slate-950 rounded-2xl scale-[1.01] bg-sky-950/30 p-0.5"
@@ -1499,8 +1512,8 @@ export default function App() {
 
       {/* ⚠️ LIVE COMPACTNESS BAR / A4 PROPORTION ANALYZER (PRINT-HIDDEN) */}
       <div className="bg-slate-900 border-b border-slate-900 px-4 py-1.5 flex justify-center items-center gap-4 text-xs print:hidden">
-        <div
-          id="overflow-badge"
+        <div 
+          id="overflow-badge" 
           className={`flex items-center gap-2 p-1 rounded-lg transition-all duration-300 ${
             tourStep !== null && currentSteps[tourStep]?.anchorId === "overflow-badge"
               ? "ring-4 ring-offset-2 ring-offset-slate-900 ring-rose-500 scale-105 bg-rose-950/20"
@@ -1526,14 +1539,14 @@ export default function App() {
 
       {/* 📦 CONTENT DIVISION: CONTROLS & RENDER HOUSINGS */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden print:overflow-visible">
-
+        
         {/* 🛠️ EDIT PANEL (LEFT SIDEBAR, COLLAPSED IF NOT EDITING) */}
         {isEditing && (
           <aside className={`w-full lg:w-[460px] bg-slate-950 border-r border-slate-900 flex flex-col overflow-hidden leading-relaxed shrink-0 print:hidden ${mobileSubView === "edit" ? "flex" : "hidden lg:flex"}`}>
-
+            
             {/* Tabs for Sidebar items control */}
-            <div
-              id="panel-tabs"
+            <div 
+              id="panel-tabs" 
               className="border-b border-slate-900 bg-slate-950 p-2.5 grid grid-cols-3 gap-1.5 transition-all duration-300"
             >
               <button
@@ -1625,7 +1638,7 @@ export default function App() {
 
             {/* Sidebar Scroll Area */}
             <div className="flex-1 overflow-y-auto custom-scroll p-4 space-y-4">
-
+              
               {/* TAB 1: CONTATO */}
               {activeTab === "contato" && (
                 <div className="space-y-3.5">
@@ -1637,7 +1650,7 @@ export default function App() {
                   {/* DRAG & DROP PHOTO UPLOADER */}
                   <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-900 space-y-2">
                     <label className="block text-[10px] font-bold uppercase text-slate-400">Minha Foto de Perfil</label>
-
+                    
                     <div
                       onDragEnter={handleDrag}
                       onDragOver={handleDrag}
@@ -1684,7 +1697,7 @@ export default function App() {
                       Dica: Use uma foto bem iluminada de rosto (estilo Susan McFly).
                     </p>
                   </div>
-
+                  
                   <div>
                     <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Meu Nome Completo</label>
                     <input
@@ -1731,7 +1744,7 @@ export default function App() {
                     <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Onde Moro (Cidade - Estado)</label>
                     <input
                       type="text"
-                      placeholder="Ex: Palmeira dos Índios - AL"
+                      placeholder="Ex: São Paulo - SP"
                       value={cvData.location}
                       onChange={(e) => updateField("location", e.target.value)}
                       className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded px-2.5 py-1.5 text-xs text-white outline-none"
@@ -1739,19 +1752,53 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Link do meu perfil do LinkedIn / Site</label>
+                    <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">LinkedIn</label>
                     <input
                       type="text"
-                      placeholder="Ex: linkedin.com/in/meu-perfil"
+                      placeholder="Ex: linkedin.com/in/seu-perfil"
                       value={cvData.linkedin}
                       onChange={(e) => updateField("linkedin", e.target.value)}
                       className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded px-2.5 py-1.5 text-xs text-white outline-none"
                     />
                   </div>
 
-                  <div className="border-t border-slate-900 pt-3 mt-1 space-y-3">
-                    <label className="block text-[10px] font-bold uppercase text-slate-300">Minhas Redes Sociais extras (Estilo Susan Mcfly)</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">GitHub</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: github.com/seu-usuario"
+                        value={cvData.github || ""}
+                        onChange={(e) => updateField("github", e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded px-2.5 py-1.5 text-xs text-white outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Behance (Portfólio)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: behance.net/seu-perfil"
+                        value={cvData.behance || ""}
+                        onChange={(e) => updateField("behance", e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded px-2.5 py-1.5 text-xs text-white outline-none"
+                      />
+                    </div>
+                  </div>
 
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Portfólio / Site Pessoal</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: meudominio.com"
+                      value={cvData.website || ""}
+                      onChange={(e) => updateField("website", e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded px-2.5 py-1.5 text-xs text-white outline-none"
+                    />
+                  </div>
+
+                  <div className="border-t border-slate-900 pt-3 mt-1 space-y-3">
+                    <label className="block text-[10px] font-bold uppercase text-slate-300">Minhas Redes Sociais extras</label>
+                    
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="block text-[9px] font-medium text-slate-400 uppercase mb-1">Instagram</label>
@@ -1836,7 +1883,7 @@ export default function App() {
                           <span className="text-[10px] bg-blue-900/40 text-blue-400 font-bold px-2 py-0.5 rounded border border-blue-800/25">
                             Formação #{index + 1}
                           </span>
-
+                          
                           <div className="flex items-center gap-1.5">
                             {/* Reordering Controls */}
                             <button
@@ -1855,7 +1902,7 @@ export default function App() {
                             >
                               <ArrowDown size={11} />
                             </button>
-
+                            
                             <button
                               onClick={() => handleDeleteEdu(item.id)}
                               className="text-red-400 hover:bg-red-950/40 p-1 rounded"
@@ -1957,7 +2004,7 @@ export default function App() {
                           <span className="text-[10px] bg-indigo-900/30 text-indigo-400 px-2 py-0.5 rounded border border-indigo-800/35">
                             Cargo #{index + 1}
                           </span>
-
+                          
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => moveExperience(index, "up")}
@@ -1973,7 +2020,7 @@ export default function App() {
                             >
                               <ArrowDown size={11} />
                             </button>
-
+                            
                             <button
                               onClick={() => handleDeleteExp(item.id)}
                               className="text-red-400 hover:bg-red-950/40 p-1 rounded"
@@ -2046,7 +2093,7 @@ export default function App() {
                               <Plus size={10} /> Adicionar Tópico
                             </button>
                           </div>
-
+                          
                           {item.bullets.map((bullet, bIdx) => (
                             <div key={bIdx} className="flex items-center gap-1">
                               <input
@@ -2074,7 +2121,7 @@ export default function App() {
               {/* TAB 5: HABILIDADES */}
               {activeTab === "habilidades" && (
                 <div className="space-y-4">
-
+                  
                   {/* Skills lists section */}
                   <div className="space-y-3">
                     <div className="border-b border-slate-900 pb-2 flex justify-between items-center">
@@ -2100,7 +2147,7 @@ export default function App() {
                               onChange={(e) => handleUpdateSkill(sk.id, e.target.value, sk.level)}
                               className="bg-slate-950 font-semibold text-white text-xs px-2 py-1 rounded w-3/4 border border-slate-900Focus"
                             />
-
+                            
                             <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => moveSkill(index, "up")}
@@ -2116,7 +2163,7 @@ export default function App() {
                               >
                                 <ArrowDown size={10} />
                               </button>
-
+                              
                               <button
                                 onClick={() => handleDeleteSkill(sk.id)}
                                 className="text-red-400 p-1 hover:bg-red-950/20 rounded"
@@ -2439,8 +2486,8 @@ export default function App() {
                           key={fontItem.id}
                           onClick={() => setFontFamily(fontItem.id as any)}
                           className={`w-full text-left px-3 py-2 rounded text-xs font-bold flex items-center justify-between transition-colors ${
-                            fontFamily === fontItem.id
-                              ? "bg-blue-600 text-white"
+                            fontFamily === fontItem.id 
+                              ? "bg-blue-600 text-white" 
                               : "text-slate-100 hover:bg-slate-900 hover:text-white"
                           }`}
                         >
@@ -2589,7 +2636,7 @@ export default function App() {
                   {/* 5. TOGGLE CONTENT SECTIONS */}
                   <div className="space-y-2.5 bg-slate-900/60 p-3.5 rounded-xl border border-slate-900">
                     <h4 className="text-[10px] uppercase font-bold text-slate-300 mb-2">👁️ Mostrar ou Ocultar Seções</h4>
-
+                    
                     <label className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer hover:text-white">
                       <input
                         type="checkbox"
@@ -2673,7 +2720,7 @@ export default function App() {
                 </div>
               )}
             </div>
-
+            
             {/* Sidebar Sticky Footer info */}
             <div className="border-t border-slate-900 p-3.5 bg-slate-950 flex items-center justify-between text-[10px] text-slate-500">
               <span className="flex items-center gap-1">
@@ -2697,10 +2744,13 @@ export default function App() {
                 const hasEmail = cvData.email && cvData.email.trim() !== "";
                 const hasLocation = cvData.location && cvData.location.trim() !== "";
                 const hasLinkedin = cvData.linkedin && cvData.linkedin.trim() !== "";
+                const hasGithub = cvData.github && cvData.github.trim() !== "";
+                const hasBehance = cvData.behance && cvData.behance.trim() !== "";
+                const hasWebsite = cvData.website && cvData.website.trim() !== "";
                 const hasSkype = cvData.skype && cvData.skype.trim() !== "";
                 const hasInstagram = cvData.instagram && cvData.instagram.trim() !== "";
                 const hasTwitter = cvData.twitter && cvData.twitter.trim() !== "";
-                const hasAnyContact = hasPhone || hasEmail || hasLocation || hasLinkedin || hasSkype || hasInstagram || hasTwitter;
+                const hasAnyContact = hasPhone || hasEmail || hasLocation || hasLinkedin || hasGithub || hasBehance || hasWebsite || hasSkype || hasInstagram || hasTwitter;
 
                 const hasReferences = !hideReferences && cvData.references && cvData.references.trim() !== "";
 
@@ -2840,6 +2890,33 @@ export default function App() {
                                     <span style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-75">LinkedIn</span>
                                   </div>
                                   <span style={{ fontSize: fontSizeSidebar + "px" }} className="font-sans font-medium truncate">{cvData.linkedin}</span>
+                                </div>
+                              )}
+                              {hasGithub && (
+                                <div style={{ color: sidebarTextMain }} className="flex flex-col mb-2 pl-1 text-left truncate">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Github size={11} className="shrink-0" style={{ color: sidebarIconColor }} />
+                                    <span style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-75">GitHub</span>
+                                  </div>
+                                  <span style={{ fontSize: fontSizeSidebar + "px" }} className="font-sans font-medium truncate">{cvData.github}</span>
+                                </div>
+                              )}
+                              {hasBehance && (
+                                <div style={{ color: sidebarTextMain }} className="flex flex-col mb-2 pl-1 text-left truncate">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Palette size={11} className="shrink-0" style={{ color: sidebarIconColor }} />
+                                    <span style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-75">Behance</span>
+                                  </div>
+                                  <span style={{ fontSize: fontSizeSidebar + "px" }} className="font-sans font-medium truncate">{cvData.behance}</span>
+                                </div>
+                              )}
+                              {hasWebsite && (
+                                <div style={{ color: sidebarTextMain }} className="flex flex-col mb-2 pl-1 text-left truncate">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Globe size={11} className="shrink-0" style={{ color: sidebarIconColor }} />
+                                    <span style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-75">Site / Portfólio</span>
+                                  </div>
+                                  <span style={{ fontSize: fontSizeSidebar + "px" }} className="font-sans font-medium truncate">{cvData.website}</span>
                                 </div>
                               )}
                               {(hasSkype || hasInstagram || hasTwitter) && (
@@ -3027,7 +3104,7 @@ export default function App() {
                                       {exp.company} {exp.location && <span className="text-slate-400 font-normal">| {exp.location}</span>}
                                     </p>
                                   )}
-
+                                  
                                   {exp.description && (
                                     <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-650 text-justify mt-1.5 font-medium">
                                       {exp.description}
@@ -3150,10 +3227,13 @@ export default function App() {
                 const hasEmail = cvData.email && cvData.email.trim() !== "";
                 const hasLocation = cvData.location && cvData.location.trim() !== "";
                 const hasLinkedin = cvData.linkedin && cvData.linkedin.trim() !== "";
+                const hasGithub = cvData.github && cvData.github.trim() !== "";
+                const hasBehance = cvData.behance && cvData.behance.trim() !== "";
+                const hasWebsite = cvData.website && cvData.website.trim() !== "";
                 const hasSkype = cvData.skype && cvData.skype.trim() !== "";
                 const hasInstagram = cvData.instagram && cvData.instagram.trim() !== "";
                 const hasTwitter = cvData.twitter && cvData.twitter.trim() !== "";
-                const hasAnyContact = hasPhone || hasEmail || hasLocation || hasLinkedin || hasSkype || hasInstagram || hasTwitter;
+                const hasAnyContact = hasPhone || hasEmail || hasLocation || hasLinkedin || hasGithub || hasBehance || hasWebsite || hasSkype || hasInstagram || hasTwitter;
 
                 const hasReferences = !hideReferences && cvData.references && cvData.references.trim() !== "";
 
@@ -3263,6 +3343,33 @@ export default function App() {
                                     <span style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-75 text-black">LinkedIn</span>
                                   </div>
                                   <span style={{ fontSize: fontSizeSidebar + "px" }} className="font-sans font-semibold truncate">{cvData.linkedin}</span>
+                                </div>
+                              )}
+                              {hasGithub && (
+                                <div className="flex flex-col mb-2 pl-0.5 text-left truncate text-slate-950">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Github size={11} className="shrink-0 text-black" />
+                                    <span style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-75 text-black">GitHub</span>
+                                  </div>
+                                  <span style={{ fontSize: fontSizeSidebar + "px" }} className="font-sans font-semibold truncate">{cvData.github}</span>
+                                </div>
+                              )}
+                              {hasBehance && (
+                                <div className="flex flex-col mb-2 pl-0.5 text-left truncate text-slate-950">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Palette size={11} className="shrink-0 text-black" />
+                                    <span style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-75 text-black">Behance</span>
+                                  </div>
+                                  <span style={{ fontSize: fontSizeSidebar + "px" }} className="font-sans font-semibold truncate">{cvData.behance}</span>
+                                </div>
+                              )}
+                              {hasWebsite && (
+                                <div className="flex flex-col mb-2 pl-0.5 text-left truncate text-slate-950">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Globe size={11} className="shrink-0 text-black" />
+                                    <span style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-75 text-black">Site / Portfólio</span>
+                                  </div>
+                                  <span style={{ fontSize: fontSizeSidebar + "px" }} className="font-sans font-semibold truncate">{cvData.website}</span>
                                 </div>
                               )}
                               {(hasSkype || hasInstagram || hasTwitter) && (
@@ -3453,13 +3560,13 @@ export default function App() {
                                       {exp.company} {exp.location && <span className="text-slate-600 font-bold">| {exp.location}</span>}
                                     </p>
                                   )}
-
+                                  
                                   {exp.description && (
                                     <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-800 text-justify mt-1.5 font-semibold">
                                       {exp.description}
                                     </p>
                                   )}
-
+                                  
                                   {exp.bullets && exp.bullets.filter(b => b && b.trim() !== "").length > 0 && (
                                     <ul className="list-disc pl-3.5 mt-1.5 space-y-0.5">
                                       {exp.bullets.filter(b => b && b.trim() !== "").map((bullet, idx) => (
@@ -3600,7 +3707,7 @@ export default function App() {
             <Edit3 size={13} />
             <span>1. Escrever Informações</span>
           </button>
-
+          
           <button
             onClick={() => setMobileSubView("preview")}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all relative ${
@@ -3660,7 +3767,7 @@ export default function App() {
                 <Check size={14} />
                 <span>Baixar PDF Direto</span>
               </button>
-
+              
               <button
                 onClick={() => {
                   window.open(window.location.href, '_blank');
