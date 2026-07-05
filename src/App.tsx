@@ -66,6 +66,7 @@ interface SkillItem {
   id: string;
   name: string;
   level: number;
+  category?: string;
 }
 
 interface LanguageItem {
@@ -135,9 +136,9 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
 
     const replacement = before + selected + after;
     const newValue = text.substring(0, start) + replacement + text.substring(end);
-    
+
     onChange(newValue);
-    
+
     // Restore selection/focus after state update on next tick
     setTimeout(() => {
       textarea.focus();
@@ -154,7 +155,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
     const end = textarea.selectionEnd;
     const text = textarea.value;
     const selected = text.substring(start, end);
-    
+
     if (selected.includes("\n")) {
       const updated = selected.split("\n").map(line => line.startsWith("• ") ? line : "• " + line).join("\n");
       insertText("", updated);
@@ -179,7 +180,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
     <div className="space-y-1.5" id={id}>
       <div className="flex items-center justify-between">
         <label className="block text-[10px] font-bold uppercase text-slate-400">{label}</label>
-        
+
         {/* Editor Toolbar with non-technical, user-friendly tags */}
         <div className="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-900/80">
           <button
@@ -226,7 +227,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
           rows={rows}
           className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded p-2 text-xs text-slate-200 outline-none resize-none leading-relaxed focus:ring-1 focus:ring-blue-500/20"
         />
-        
+
         {/* Helper Badge */}
         <div className="absolute right-2 bottom-1.5 text-[8px] text-slate-500 select-none pointer-events-none group-focus-within:opacity-0 transition-opacity">
           Editor Avançado ✨
@@ -304,11 +305,11 @@ const DEFAULT_CV: CVData = {
     }
   ],
   skills: [
-    { id: "sk_1", name: "Desenvolvimento Front-End (React, JS, HTML/CSS)", level: 90 },
-    { id: "sk_2", name: "Figma, UI/UX Design & Prototipagem", level: 95 },
-    { id: "sk_3", name: "Versionamento com Git & Fluxos GitHub", level: 85 },
-    { id: "sk_4", name: "Identidade Visual & Direção de Arte", level: 80 },
-    { id: "sk_5", name: "Comunicação Eficiente & Trabalho em Equipe", level: 90 }
+    { id: "sk_1", name: "React, Vue, HTML/CSS, Tailwind", level: 90, category: "Frontend" },
+    { id: "sk_2", name: "Figma, UI/UX Design & Prototipagem", level: 95, category: "Design" },
+    { id: "sk_3", name: "Node.js, Express, PostgreSQL, APIs", level: 85, category: "Backend" },
+    { id: "sk_4", name: "Versionamento com Git & Fluxos GitHub", level: 85, category: "Ferramentas" },
+    { id: "sk_5", name: "Comunicação Eficiente & Metodologias Ágeis", level: 90, category: "Metodologias" }
   ],
   languages: [
     { id: "lang_1", name: "Português", level: "Nativo" },
@@ -392,6 +393,22 @@ function getAccentColor(hex: string): string {
   }
 }
 
+function getCohesiveDarkColor(hex: string): string {
+  try {
+    const { r, g, b } = hexToRgb(hex);
+    const darkR = Math.round(r * 0.12 + 15 * 0.88);
+    const darkG = Math.round(g * 0.12 + 23 * 0.88);
+    const darkB = Math.round(b * 0.12 + 42 * 0.88);
+    const toHex = (c: number) => {
+      const h = c.toString(16);
+      return h.length === 1 ? "0" + h : h;
+    };
+    return `#${toHex(darkR)}${toHex(darkG)}${toHex(darkB)}`;
+  } catch {
+    return "#1e293b";
+  }
+}
+
 // Tutorial Steps Definition (Module-level constant for easy access across hooks)
 const tutorialSteps = [
   {
@@ -437,6 +454,36 @@ export default function App() {
   const [primaryColor, setPrimaryColor] = useState<string>(() => {
     return localStorage.getItem("offline_cv_primary_color") || "#0d0f25";
   });
+  const [bodyTextColor, setBodyTextColor] = useState<string>(() => {
+    return localStorage.getItem("beatriz_cv_body_text_color") || "#1e293b";
+  });
+  const [sidebarTextColor, setSidebarTextColor] = useState<string>(() => {
+    return localStorage.getItem("beatriz_cv_sidebar_text_color") || ""; // Empty means "auto"
+  });
+
+  const [nameColor, setNameColor] = useState<string>(() => {
+    return localStorage.getItem("beatriz_cv_name_color") || "";
+  });
+  const [titleColor, setTitleColor] = useState<string>(() => {
+    return localStorage.getItem("beatriz_cv_title_color") || "";
+  });
+  const [sectionHeaderColor, setSectionHeaderColor] = useState<string>(() => {
+    return localStorage.getItem("beatriz_cv_section_header_color") || "";
+  });
+  const [companyRoleColor, setCompanyRoleColor] = useState<string>(() => {
+    return localStorage.getItem("beatriz_cv_company_role_color") || "";
+  });
+  const [periodTextColor, setPeriodTextColor] = useState<string>(() => {
+    return localStorage.getItem("beatriz_cv_period_text_color") || "";
+  });
+
+  const handlePrimaryColorChange = (hex: string) => {
+    setPrimaryColor(hex);
+    const derivedDark = getCohesiveDarkColor(hex);
+    setBodyTextColor(derivedDark);
+    setSidebarTextColor(""); // Reset to automatic contrast
+  };
+
   const [colorIntensity, setColorIntensity] = useState<number>(() => {
     return Number(localStorage.getItem("offline_cv_color_intensity") || "100");
   });
@@ -485,7 +532,7 @@ export default function App() {
   const [fontSizeScale, setFontSizeScale] = useState<"xs" | "sm" | "md" | "lg">("sm");
   const [lineHeightScale, setLineHeightScale] = useState<"tight" | "normal" | "relaxed">("normal");
   const [sectionMargin, setSectionMargin] = useState<"tight" | "normal" | "relaxed">("normal");
-  
+
   // Section visibility states (Simple language toggles)
   const [hidePicture, setHidePicture] = useState<boolean>(false);
   const [hideObjective, setHideObjective] = useState<boolean>(false);
@@ -624,17 +671,17 @@ export default function App() {
       const step = currentSteps[tourStep];
       if (!step) return;
       const element = document.getElementById(step.anchorId);
-      
+
       if (element) {
         // Scroll target element gently into view if needed
         element.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
-        
+
         const rect = element.getBoundingClientRect();
         setHighlightRect(rect);
 
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        
+
         let top = rect.bottom + window.scrollY + 12;
         let left = rect.left + window.scrollX + (rect.width / 2) - 180;
         let placement = "bottom";
@@ -654,11 +701,11 @@ export default function App() {
             left = rect.right + window.scrollX + 20;
             placement = "right";
           } else if (
-            step.anchorId === "tab-contato" || 
-            step.anchorId === "tab-perfil" || 
-            step.anchorId === "tab-estudos" || 
-            step.anchorId === "tab-carreiras" || 
-            step.anchorId === "tab-habilidades" || 
+            step.anchorId === "tab-contato" ||
+            step.anchorId === "tab-perfil" ||
+            step.anchorId === "tab-estudos" ||
+            step.anchorId === "tab-carreiras" ||
+            step.anchorId === "tab-habilidades" ||
             step.anchorId === "tab-personalizacao"
           ) {
             top = rect.top + window.scrollY - 10;
@@ -675,8 +722,8 @@ export default function App() {
           }
         } else {
           // Mobile responsive layout
-          top = rect.top > viewportHeight / 2 
-            ? rect.top + window.scrollY - 220 
+          top = rect.top > viewportHeight / 2
+            ? rect.top + window.scrollY - 220
             : rect.bottom + window.scrollY + 12;
           left = rect.left + window.scrollX + (rect.width / 2) - 170;
           placement = rect.top > viewportHeight / 2 ? "top" : "bottom";
@@ -706,7 +753,7 @@ export default function App() {
 
     window.addEventListener("resize", updateTourGeometry);
     window.addEventListener("scroll", updateTourGeometry, { passive: true });
-    
+
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -731,6 +778,16 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("beatriz_cv_color_intensity", String(colorIntensity));
   }, [colorIntensity]);
+
+  useEffect(() => {
+    localStorage.setItem("beatriz_cv_body_text_color", bodyTextColor);
+    localStorage.setItem("beatriz_cv_sidebar_text_color", sidebarTextColor);
+    localStorage.setItem("beatriz_cv_name_color", nameColor);
+    localStorage.setItem("beatriz_cv_title_color", titleColor);
+    localStorage.setItem("beatriz_cv_section_header_color", sectionHeaderColor);
+    localStorage.setItem("beatriz_cv_company_role_color", companyRoleColor);
+    localStorage.setItem("beatriz_cv_period_text_color", periodTextColor);
+  }, [bodyTextColor, sidebarTextColor, nameColor, titleColor, sectionHeaderColor, companyRoleColor, periodTextColor]);
 
   useEffect(() => {
     localStorage.setItem("beatriz_cv_fs_name", String(fontSizeName));
@@ -758,7 +815,7 @@ export default function App() {
   useEffect(() => {
     const checkHeight = () => {
       if (cvSheetRef.current) {
-        // High fidelity ratio simulation for A4. Height in standard display should not exceed ~1130px 
+        // High fidelity ratio simulation for A4. Height in standard display should not exceed ~1130px
         // to avoid spilling onto page 2 unexpectedly.
         const height = cvSheetRef.current.scrollHeight;
         if (height > 1150) {
@@ -769,7 +826,7 @@ export default function App() {
       }
     };
     checkHeight();
-    
+
     // Add brief timing trigger to check after state updates
     const timer = setTimeout(checkHeight, 300);
     return () => clearTimeout(timer);
@@ -797,7 +854,7 @@ export default function App() {
   const handleReset = () => {
     if (window.confirm("Você tem certeza de que deseja restaurar as informações reais de Beatriz? Suas customizações atuais serão limpas.")) {
       setCvData(DEFAULT_CV);
-      setPrimaryColor("#0d1b2a");
+      handlePrimaryColorChange("#0d1b2a");
     }
   };
 
@@ -806,7 +863,7 @@ export default function App() {
     setIsGeneratingPdf(true);
     try {
       const element = cvSheetRef.current;
-      
+
       // Give the browser a brief moment to update any visual details
       await new Promise((resolve) => setTimeout(resolve, 150));
 
@@ -836,7 +893,7 @@ export default function App() {
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      
+
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
       const imgHeightInPdf = (canvasHeight * pdfWidth) / canvasWidth;
@@ -1013,15 +1070,15 @@ export default function App() {
     }));
   };
 
-  const handleUpdateSkill = (id: string, name: string, level: number) => {
+  const handleUpdateSkill = (id: string, name: string, level: number, category?: string) => {
     setCvData((prev) => ({
       ...prev,
-      skills: prev.skills.map((item) => (item.id === id ? { ...item, name, level } : item)),
+      skills: prev.skills.map((item) => (item.id === id ? { ...item, name, level, category } : item)),
     }));
   };
 
   const handleAddSkill = () => {
-    const newItem: SkillItem = { id: "sk_" + Date.now(), name: "Nova Habilidade Prática", level: 85 };
+    const newItem: SkillItem = { id: "sk_" + Date.now(), name: "Nova Habilidade", level: 85, category: "Frontend" };
     setCvData((prev) => ({ ...prev, skills: [...prev.skills, newItem] }));
   };
 
@@ -1176,7 +1233,7 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-300 print:bg-white print:text-black antialiased selection:bg-blue-600 selection:text-white">
-      
+
       {/* Dynamic Native Styling Block strictly for A4 physical outputs */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@400;500;700&display=swap');
@@ -1191,6 +1248,19 @@ export default function App() {
             color: #000000 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          body * {
+            visibility: hidden;
+          }
+          #cv-print-area, #cv-print-area * {
+            visibility: visible;
+          }
+          #cv-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            height: auto !important;
           }
           .print:hidden, .print\\:hidden {
             display: none !important;
@@ -1224,7 +1294,7 @@ export default function App() {
             page-break-inside: avoid !important;
           }
         }
-        
+
         .a4-container {
           width: 210mm;
           min-height: 297mm;
@@ -1346,7 +1416,7 @@ export default function App() {
               <Sparkle className="text-blue-400 fill-blue-400 animate-pulse shrink-0" size={16} />
               <span className="truncate">{currentSteps[tourStep].title}</span>
             </h4>
-            
+
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
               {currentSteps[tourStep].text}
             </p>
@@ -1361,7 +1431,7 @@ export default function App() {
                 <ChevronLeft size={14} />
                 <span>Anterior</span>
               </button>
-              
+
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setTourStep(null)}
@@ -1418,8 +1488,8 @@ export default function App() {
             </div>
           </div>
 
-          <div 
-            id="style-tab-trigger" 
+          <div
+            id="style-tab-trigger"
             className={`flex flex-wrap items-center justify-center lg:justify-end gap-2.5 transition-all duration-300 w-full lg:w-auto ${
               tourStep === 0
                 ? "ring-4 ring-sky-500 ring-offset-4 ring-offset-slate-950 rounded-2xl scale-[1.01] bg-sky-950/30 p-0.5"
@@ -1491,7 +1561,7 @@ export default function App() {
             {/* Dynamic PDF Trigger */}
             <button
               id="print-pdf-trigger"
-              onClick={handlePrint}
+              onClick={() => !isGeneratingPdf && setShowPrintHelper(true)}
               disabled={isGeneratingPdf}
               className={`flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-extrabold transition-all border bg-gradient-to-r border-emerald-500/30 ${
                 isGeneratingPdf
@@ -1512,8 +1582,8 @@ export default function App() {
 
       {/* ⚠️ LIVE COMPACTNESS BAR / A4 PROPORTION ANALYZER (PRINT-HIDDEN) */}
       <div className="bg-slate-900 border-b border-slate-900 px-4 py-1.5 flex justify-center items-center gap-4 text-xs print:hidden">
-        <div 
-          id="overflow-badge" 
+        <div
+          id="overflow-badge"
           className={`flex items-center gap-2 p-1 rounded-lg transition-all duration-300 ${
             tourStep !== null && currentSteps[tourStep]?.anchorId === "overflow-badge"
               ? "ring-4 ring-offset-2 ring-offset-slate-900 ring-rose-500 scale-105 bg-rose-950/20"
@@ -1539,14 +1609,14 @@ export default function App() {
 
       {/* 📦 CONTENT DIVISION: CONTROLS & RENDER HOUSINGS */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden print:overflow-visible">
-        
+
         {/* 🛠️ EDIT PANEL (LEFT SIDEBAR, COLLAPSED IF NOT EDITING) */}
         {isEditing && (
           <aside className={`w-full lg:w-[460px] bg-slate-950 border-r border-slate-900 flex flex-col overflow-hidden leading-relaxed shrink-0 print:hidden ${mobileSubView === "edit" ? "flex" : "hidden lg:flex"}`}>
-            
+
             {/* Tabs for Sidebar items control */}
-            <div 
-              id="panel-tabs" 
+            <div
+              id="panel-tabs"
               className="border-b border-slate-900 bg-slate-950 p-2.5 grid grid-cols-3 gap-1.5 transition-all duration-300"
             >
               <button
@@ -1638,7 +1708,7 @@ export default function App() {
 
             {/* Sidebar Scroll Area */}
             <div className="flex-1 overflow-y-auto custom-scroll p-4 space-y-4">
-              
+
               {/* TAB 1: CONTATO */}
               {activeTab === "contato" && (
                 <div className="space-y-3.5">
@@ -1650,7 +1720,7 @@ export default function App() {
                   {/* DRAG & DROP PHOTO UPLOADER */}
                   <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-900 space-y-2">
                     <label className="block text-[10px] font-bold uppercase text-slate-400">Minha Foto de Perfil</label>
-                    
+
                     <div
                       onDragEnter={handleDrag}
                       onDragOver={handleDrag}
@@ -1697,7 +1767,7 @@ export default function App() {
                       Dica: Use uma foto bem iluminada de rosto (estilo Susan McFly).
                     </p>
                   </div>
-                  
+
                   <div>
                     <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Meu Nome Completo</label>
                     <input
@@ -1798,7 +1868,7 @@ export default function App() {
 
                   <div className="border-t border-slate-900 pt-3 mt-1 space-y-3">
                     <label className="block text-[10px] font-bold uppercase text-slate-300">Minhas Redes Sociais extras</label>
-                    
+
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="block text-[9px] font-medium text-slate-400 uppercase mb-1">Instagram</label>
@@ -1883,7 +1953,7 @@ export default function App() {
                           <span className="text-[10px] bg-blue-900/40 text-blue-400 font-bold px-2 py-0.5 rounded border border-blue-800/25">
                             Formação #{index + 1}
                           </span>
-                          
+
                           <div className="flex items-center gap-1.5">
                             {/* Reordering Controls */}
                             <button
@@ -1902,7 +1972,7 @@ export default function App() {
                             >
                               <ArrowDown size={11} />
                             </button>
-                            
+
                             <button
                               onClick={() => handleDeleteEdu(item.id)}
                               className="text-red-400 hover:bg-red-950/40 p-1 rounded"
@@ -2004,7 +2074,7 @@ export default function App() {
                           <span className="text-[10px] bg-indigo-900/30 text-indigo-400 px-2 py-0.5 rounded border border-indigo-800/35">
                             Cargo #{index + 1}
                           </span>
-                          
+
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => moveExperience(index, "up")}
@@ -2020,7 +2090,7 @@ export default function App() {
                             >
                               <ArrowDown size={11} />
                             </button>
-                            
+
                             <button
                               onClick={() => handleDeleteExp(item.id)}
                               className="text-red-400 hover:bg-red-950/40 p-1 rounded"
@@ -2093,7 +2163,7 @@ export default function App() {
                               <Plus size={10} /> Adicionar Tópico
                             </button>
                           </div>
-                          
+
                           {item.bullets.map((bullet, bIdx) => (
                             <div key={bIdx} className="flex items-center gap-1">
                               <input
@@ -2121,7 +2191,7 @@ export default function App() {
               {/* TAB 5: HABILIDADES */}
               {activeTab === "habilidades" && (
                 <div className="space-y-4">
-                  
+
                   {/* Skills lists section */}
                   <div className="space-y-3">
                     <div className="border-b border-slate-900 pb-2 flex justify-between items-center">
@@ -2144,10 +2214,11 @@ export default function App() {
                             <input
                               type="text"
                               value={sk.name}
-                              onChange={(e) => handleUpdateSkill(sk.id, e.target.value, sk.level)}
-                              className="bg-slate-950 font-semibold text-white text-xs px-2 py-1 rounded w-3/4 border border-slate-900Focus"
+                              onChange={(e) => handleUpdateSkill(sk.id, e.target.value, sk.level, sk.category)}
+                              className="bg-slate-950 font-semibold text-white text-xs px-2 py-1 rounded w-3/4 border border-slate-800"
+                              placeholder="Nome da Habilidade"
                             />
-                            
+
                             <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => moveSkill(index, "up")}
@@ -2163,7 +2234,7 @@ export default function App() {
                               >
                                 <ArrowDown size={10} />
                               </button>
-                              
+
                               <button
                                 onClick={() => handleDeleteSkill(sk.id)}
                                 className="text-red-400 p-1 hover:bg-red-950/20 rounded"
@@ -2173,19 +2244,34 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="range"
-                              min="10"
-                              max="100"
-                              step="5"
-                              value={sk.level}
-                              onChange={(e) => handleUpdateSkill(sk.id, sk.name, Number(e.target.value))}
-                              className="flex-1 accent-blue-500 h-1"
-                            />
-                            <span className="text-[10px] font-mono font-bold text-blue-400 w-8 text-right">
-                              {sk.level}%
-                            </span>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Categoria</label>
+                              <input
+                                type="text"
+                                value={sk.category || ""}
+                                onChange={(e) => handleUpdateSkill(sk.id, sk.name, sk.level, e.target.value)}
+                                placeholder="Ex: Frontend, Backend, Design..."
+                                className="bg-slate-950 text-white text-[10px] px-2 py-1 rounded w-full border border-slate-800 font-medium"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Nível / Proficiência</label>
+                              <div className="flex items-center gap-2 mt-1">
+                                <input
+                                  type="range"
+                                  min="10"
+                                  max="100"
+                                  step="5"
+                                  value={sk.level}
+                                  onChange={(e) => handleUpdateSkill(sk.id, sk.name, Number(e.target.value), sk.category)}
+                                  className="flex-1 accent-blue-500 h-1"
+                                />
+                                <span className="text-[10px] font-mono font-bold text-blue-400 w-8 text-right shrink-0">
+                                  {sk.level}%
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -2361,7 +2447,7 @@ export default function App() {
                           {PRESET_COLORS.map((preset) => (
                             <button
                               key={preset.hex}
-                              onClick={() => setPrimaryColor(preset.hex)}
+                              onClick={() => handlePrimaryColorChange(preset.hex)}
                               className={`flex flex-col items-center gap-1 p-1 rounded-lg border transition-all ${
                                 primaryColor.toLowerCase() === preset.hex.toLowerCase()
                                   ? "border-blue-500 bg-slate-900 shadow-sm"
@@ -2390,7 +2476,7 @@ export default function App() {
                         <input
                           type="color"
                           value={primaryColor}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          onChange={(e) => handlePrimaryColorChange(e.target.value)}
                           className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
                         />
                       </div>
@@ -2413,6 +2499,60 @@ export default function App() {
                         <p className="text-[8.5px] text-slate-400 leading-snug">
                           Ajusta a tonalidade da barra esquerda no modelo colorido.
                         </p>
+                      </div>
+
+                      {/* Font Color overrides */}
+                      <div className="pt-3 border-t border-slate-900 space-y-2.5">
+                        <h5 className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Ajuste Fino de Cores de Fontes</h5>
+
+                        {/* Cor do texto do corpo */}
+                        <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-lg border border-slate-900">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-slate-300 uppercase">Texto do Corpo (Direito)</span>
+                            <span className="text-[9px] font-mono text-slate-500">{bodyTextColor.toUpperCase()}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => setBodyTextColor(getCohesiveDarkColor(primaryColor))}
+                              className="text-[8px] bg-slate-900 hover:bg-slate-850 text-blue-400 font-bold px-1.5 py-0.5 rounded border border-slate-800"
+                              title="Restaurar cor recomendada coesa"
+                            >
+                              Reset
+                            </button>
+                            <input
+                              type="color"
+                              value={bodyTextColor}
+                              onChange={(e) => setBodyTextColor(e.target.value)}
+                              className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Cor do texto do sidebar */}
+                        <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-lg border border-slate-900">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-slate-300 uppercase">Texto da Barra (Esquerdo)</span>
+                            <span className="text-[9px] font-mono text-slate-500">
+                              {sidebarTextColor ? sidebarTextColor.toUpperCase() : "AUTO"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSidebarTextColor("")}
+                              className="text-[8px] bg-slate-900 hover:bg-slate-850 text-blue-400 font-bold px-1.5 py-0.5 rounded border border-slate-800"
+                              title="Usar contraste inteligente automático"
+                            >
+                              Auto
+                            </button>
+                            <input
+                              type="color"
+                              value={sidebarTextColor || (getContrastColor(primaryColor))}
+                              onChange={(e) => setSidebarTextColor(e.target.value)}
+                              className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -2467,6 +2607,148 @@ export default function App() {
                     </div>
                   )}
 
+                  {/* CORES DE TEXTO POR ELEMENTO */}
+                  <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-900 space-y-3">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase text-slate-300 flex items-center gap-1.5">
+                        <span>🎯 Ajuste Fino de Cores por Elemento</span>
+                      </h4>
+                      <p className="text-[10px] text-slate-500">Mude a cor de cada texto específico do currículo de forma independente para ambos os modelos.</p>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {/* Cor do Nome */}
+                      <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-lg border border-slate-900">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-300 uppercase">Nome do Candidato</span>
+                          <span className="text-[9px] font-mono text-slate-500">
+                            {nameColor ? nameColor.toUpperCase() : "AUTOMÁTICO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setNameColor("")}
+                            className="text-[8px] bg-slate-900 hover:bg-slate-850 text-blue-400 font-bold px-1.5 py-0.5 rounded border border-slate-800"
+                            title="Restaurar padrão automático"
+                          >
+                            Auto
+                          </button>
+                          <input
+                            type="color"
+                            value={nameColor || (designStyle === "colorido" ? primaryColor : "#000000")}
+                            onChange={(e) => setNameColor(e.target.value)}
+                            className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Cor do Cargo / Subtítulo */}
+                      <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-lg border border-slate-900">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-300 uppercase">Cargo / Subtítulo</span>
+                          <span className="text-[9px] font-mono text-slate-500">
+                            {titleColor ? titleColor.toUpperCase() : "AUTOMÁTICO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setTitleColor("")}
+                            className="text-[8px] bg-slate-900 hover:bg-slate-850 text-blue-400 font-bold px-1.5 py-0.5 rounded border border-slate-800"
+                            title="Restaurar padrão automático"
+                          >
+                            Auto
+                          </button>
+                          <input
+                            type="color"
+                            value={titleColor || (designStyle === "colorido" ? bodyTextColor : "#1e293b")}
+                            onChange={(e) => setTitleColor(e.target.value)}
+                            className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Cabeçalhos das Seções */}
+                      <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-lg border border-slate-900">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-300 uppercase">Cabeçalhos de Seções</span>
+                          <span className="text-[9px] font-mono text-slate-500">
+                            {sectionHeaderColor ? sectionHeaderColor.toUpperCase() : "AUTOMÁTICO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSectionHeaderColor("")}
+                            className="text-[8px] bg-slate-900 hover:bg-slate-850 text-blue-400 font-bold px-1.5 py-0.5 rounded border border-slate-800"
+                            title="Restaurar padrão automático"
+                          >
+                            Auto
+                          </button>
+                          <input
+                            type="color"
+                            value={sectionHeaderColor || (designStyle === "colorido" ? primaryColor : "#000000")}
+                            onChange={(e) => setSectionHeaderColor(e.target.value)}
+                            className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Funções, Cursos e Graus */}
+                      <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-lg border border-slate-900">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-300 uppercase">Funções, Cursos e Graus</span>
+                          <span className="text-[9px] font-mono text-slate-500">
+                            {companyRoleColor ? companyRoleColor.toUpperCase() : "AUTOMÁTICO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setCompanyRoleColor("")}
+                            className="text-[8px] bg-slate-900 hover:bg-slate-850 text-blue-400 font-bold px-1.5 py-0.5 rounded border border-slate-800"
+                            title="Restaurar padrão automático"
+                          >
+                            Auto
+                          </button>
+                          <input
+                            type="color"
+                            value={companyRoleColor || (designStyle === "colorido" ? primaryColor : "#000000")}
+                            onChange={(e) => setCompanyRoleColor(e.target.value)}
+                            className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Anos e Períodos */}
+                      <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-lg border border-slate-900">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-300 uppercase">Anos e Períodos</span>
+                          <span className="text-[9px] font-mono text-slate-500">
+                            {periodTextColor ? periodTextColor.toUpperCase() : "AUTOMÁTICO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setPeriodTextColor("")}
+                            className="text-[8px] bg-slate-900 hover:bg-slate-850 text-blue-400 font-bold px-1.5 py-0.5 rounded border border-slate-800"
+                            title="Restaurar padrão automático"
+                          >
+                            Auto
+                          </button>
+                          <input
+                            type="color"
+                            value={periodTextColor || (designStyle === "colorido" ? bodyTextColor : "#1e293b")}
+                            onChange={(e) => setPeriodTextColor(e.target.value)}
+                            className="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* 2. CHOOSE FONT FAMILY */}
                   <div className="bg-slate-900/60 p-3.5 rounded-xl border border-slate-900 space-y-2.5">
                     <div>
@@ -2486,8 +2768,8 @@ export default function App() {
                           key={fontItem.id}
                           onClick={() => setFontFamily(fontItem.id as any)}
                           className={`w-full text-left px-3 py-2 rounded text-xs font-bold flex items-center justify-between transition-colors ${
-                            fontFamily === fontItem.id 
-                              ? "bg-blue-600 text-white" 
+                            fontFamily === fontItem.id
+                              ? "bg-blue-600 text-white"
                               : "text-slate-100 hover:bg-slate-900 hover:text-white"
                           }`}
                         >
@@ -2636,7 +2918,7 @@ export default function App() {
                   {/* 5. TOGGLE CONTENT SECTIONS */}
                   <div className="space-y-2.5 bg-slate-900/60 p-3.5 rounded-xl border border-slate-900">
                     <h4 className="text-[10px] uppercase font-bold text-slate-300 mb-2">👁️ Mostrar ou Ocultar Seções</h4>
-                    
+
                     <label className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer hover:text-white">
                       <input
                         type="checkbox"
@@ -2720,7 +3002,7 @@ export default function App() {
                 </div>
               )}
             </div>
-            
+
             {/* Sidebar Sticky Footer info */}
             <div className="border-t border-slate-900 p-3.5 bg-slate-950 flex items-center justify-between text-[10px] text-slate-500">
               <span className="flex items-center gap-1">
@@ -2736,8 +3018,24 @@ export default function App() {
           <div
             ref={cvSheetRef}
             style={getFontFamilyStyle(fontFamily)}
-            className="a4-container bg-white text-slate-800 shadow-2xl overflow-hidden flex flex-col justify-between border border-slate-200 print:shadow-none print:border-none print:m-0 print:rounded-none select-text"
+            className="a4-container bg-white text-slate-800 shadow-2xl overflow-hidden flex flex-col justify-between border border-slate-200 print:shadow-none print:border-none print:m-0 print:rounded-none select-text relative"
           >
+            {/* Visual Page Break Indicators (visible only in editor preview) */}
+            {isEditing && (
+              <>
+                <div className="absolute left-0 right-0 border-t-2 border-dashed border-red-500/30 pointer-events-none flex items-center justify-end pr-4 print:hidden z-40" style={{ top: "297mm" }}>
+                  <span className="bg-red-500/10 text-red-500 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-b border border-t-0 border-red-500/20 backdrop-blur-xs select-none">
+                    Fim da Página 1 / Início da Página 2
+                  </span>
+                </div>
+                <div className="absolute left-0 right-0 border-t-2 border-dashed border-slate-500/20 pointer-events-none flex items-center justify-end pr-4 print:hidden z-40" style={{ top: "594mm" }}>
+                  <span className="bg-slate-500/10 text-slate-400 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-b border border-t-0 border-slate-500/20 backdrop-blur-xs select-none">
+                    Fim da Página 2 / Início da Página 3
+                  </span>
+                </div>
+              </>
+            )}
+
             {designStyle === "colorido" ? (
               (() => {
                 const hasPhone = cvData.phone && cvData.phone.trim() !== "";
@@ -2798,12 +3096,12 @@ export default function App() {
                   }
                 })();
 
-                const sidebarTextMain = sidebarContrastColor;
-                const sidebarTextSecondary = sidebarContrastColor === "#ffffff" ? "rgba(255, 255, 255, 0.72)" : "rgba(15, 23, 42, 0.75)";
-                const sidebarBorderColor = sidebarContrastColor === "#ffffff" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)";
-                const sidebarIconColor = sidebarContrastColor === "#ffffff" ? "rgba(255, 255, 255, 0.95)" : primaryColor;
-                const sidebarBulletColor = sidebarContrastColor === "#ffffff" ? "rgba(255, 255, 255, 0.85)" : primaryColor;
-                const sidebarHeaderBackground = sidebarContrastColor === "#ffffff" ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.05)";
+                const sidebarTextMain = sidebarTextColor || sidebarContrastColor;
+                const sidebarTextSecondary = sidebarTextMain === "#ffffff" ? "rgba(255, 255, 255, 0.72)" : sidebarTextMain === "#000000" ? "rgba(15, 23, 42, 0.75)" : `${sidebarTextMain}d0`;
+                const sidebarBorderColor = sidebarTextMain === "#ffffff" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.12)";
+                const sidebarIconColor = sidebarTextMain === "#ffffff" ? "rgba(255, 255, 255, 0.95)" : primaryColor;
+                const sidebarBulletColor = sidebarTextMain === "#ffffff" ? "rgba(255, 255, 255, 0.85)" : primaryColor;
+                const sidebarHeaderBackground = sidebarTextMain === "#ffffff" ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.05)";
 
                 return (
                   <div className="flex-1 grid grid-cols-12 h-full print:bg-white select-text">
@@ -2968,13 +3266,32 @@ export default function App() {
                             >
                               HABILIDADES
                             </div>
-                            <div className="space-y-1.5 pl-1.5 text-left" style={{ color: sidebarTextMain }}>
-                              {validSkills.map((sk) => (
-                                <div key={sk.id} style={{ fontSize: fontSizeSidebar + "px", lineHeight: (customLineHeight / 100) }} className="flex items-center gap-2 font-semibold">
-                                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: sidebarBulletColor }} />
-                                  <span>{sk.name}</span>
-                                </div>
-                              ))}
+                            <div className="space-y-3 pl-1 text-left" style={{ color: sidebarTextMain }}>
+                              {(() => {
+                                const groups: { [key: string]: SkillItem[] } = {};
+                                validSkills.forEach((sk) => {
+                                  const cat = sk.category && sk.category.trim() !== "" ? sk.category.trim() : "Geral";
+                                  if (!groups[cat]) {
+                                    groups[cat] = [];
+                                  }
+                                  groups[cat].push(sk);
+                                });
+                                return Object.entries(groups).map(([categoryName, items]) => (
+                                  <div key={categoryName} className="space-y-1">
+                                    <h5 style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-70">
+                                      {categoryName}
+                                    </h5>
+                                    <div className="space-y-1 pl-1">
+                                      {items.map((sk) => (
+                                        <div key={sk.id} style={{ fontSize: fontSizeSidebar + "px", lineHeight: (customLineHeight / 100) }} className="flex items-center gap-1.5 font-semibold">
+                                          <span className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: sidebarBulletColor }} />
+                                          <span>{sk.name}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
                             </div>
                           </div>
                         )}
@@ -3036,18 +3353,18 @@ export default function App() {
                     </div>
 
                     {/* Coluna Direta - Conteúdo em Papel Branco */}
-                    <div className="col-span-8 p-6 flex flex-col justify-between bg-white text-slate-800">
+                    <div className="col-span-8 p-6 flex flex-col justify-between bg-white animate-fade-in" style={{ color: bodyTextColor }}>
                       <div className="flex flex-col h-full" style={{ gap: customSectionSpacing + "px" }}>
                         {/* Bloco Elegante de Destaque com o Nome (Elegante, Coeso com a cor primária) */}
                         <div className="flex flex-col justify-center items-center text-center pb-1">
                           <h1
-                            style={{ color: primaryColor, fontSize: fontSizeName + "px" }}
+                            style={{ color: nameColor || primaryColor, fontSize: fontSizeName + "px" }}
                             className="font-black uppercase tracking-wide leading-none font-sans text-wrap break-words text-center"
                           >
                             {cvData.name}
                           </h1>
                           {cvData.title && (
-                            <p style={{ fontSize: fontSizeTitle + "px" }} className="text-slate-600 uppercase tracking-widest font-extrabold mt-1.5 font-sans text-center">
+                            <p style={{ fontSize: fontSizeTitle + "px", color: titleColor || bodyTextColor, opacity: titleColor ? 1 : 0.75 }} className="uppercase tracking-widest font-extrabold mt-1.5 font-sans text-center">
                               {cvData.title}
                             </p>
                           )}
@@ -3059,11 +3376,11 @@ export default function App() {
                             <div
                               style={{
                                 backgroundColor: "rgba(241, 245, 249, 0.75)",
-                                borderLeft: `4px solid ${primaryColor}`,
+                                borderLeft: `4px solid ${sectionHeaderColor || primaryColor}`,
                               }}
                               className="p-4 rounded-r-lg"
                             >
-                              <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-750 text-justify font-sans font-medium">
+                              <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100), color: bodyTextColor }} className="text-justify font-sans font-medium">
                                 {cvData.objective}
                               </p>
                             </div>
@@ -3075,38 +3392,38 @@ export default function App() {
                           <div className="col-span-12 font-sans">
                             <div
                               style={{
-                                backgroundColor: primaryColor,
-                                color: getContrastColor(primaryColor),
+                                backgroundColor: sectionHeaderColor || primaryColor,
+                                color: getContrastColor(sectionHeaderColor || primaryColor),
                                 fontSize: fontSizeSection + "px"
                               }}
                               className="w-full py-1 px-4 text-center font-extrabold uppercase tracking-widest mb-4 shadow-sm rounded-sm"
                             >
                               EXPERIÊNCIA PROFISSIONAL
                             </div>
-                            <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: getSecondaryColor(primaryColor, 0.25) }}>
+                            <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: getSecondaryColor(sectionHeaderColor || primaryColor, 0.25) }}>
                               {validExperience.map((exp) => (
                                 <div key={exp.id} className="relative print-break-avoid font-sans">
                                   {/* Círculo do marcador temporal na linha */}
                                   <div
                                     className="absolute -left-[26px] top-[2.5px] w-[10px] h-[10px] rounded-full border-2 bg-white"
-                                    style={{ borderColor: primaryColor }}
+                                    style={{ borderColor: companyRoleColor || primaryColor }}
                                   />
                                   <div className="flex justify-between items-start">
-                                    <strong style={{ color: primaryColor, fontSize: (fontSizeBody + 1.5) + "px" }} className="font-extrabold uppercase tracking-wide">
+                                    <strong style={{ color: companyRoleColor || primaryColor, fontSize: (fontSizeBody + 1.5) + "px" }} className="font-extrabold uppercase tracking-wide">
                                       {exp.role}
                                     </strong>
-                                    <span style={{ fontSize: Math.max(7, fontSizeBody - 0.5) + "px" }} className="font-mono font-bold text-slate-500 whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded">
+                                    <span style={{ fontSize: Math.max(7, fontSizeBody - 0.5) + "px", color: periodTextColor || bodyTextColor, opacity: periodTextColor ? 1 : 0.85 }} className="font-mono font-bold whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded">
                                       {exp.period}
                                     </span>
                                   </div>
                                   {(exp.company || exp.location) && (
-                                    <p style={{ fontSize: (fontSizeBody - 0.5) + "px" }} className="text-slate-500 font-bold mt-0.5 uppercase tracking-wide">
-                                      {exp.company} {exp.location && <span className="text-slate-400 font-normal">| {exp.location}</span>}
+                                    <p style={{ fontSize: (fontSizeBody - 0.5) + "px", color: bodyTextColor, opacity: 0.75 }} className="font-bold mt-0.5 uppercase tracking-wide">
+                                      {exp.company} {exp.location && <span className="opacity-60 font-normal">| {exp.location}</span>}
                                     </p>
                                   )}
-                                  
+
                                   {exp.description && (
-                                    <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-650 text-justify mt-1.5 font-medium">
+                                    <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100), color: bodyTextColor, opacity: 0.9 }} className="text-justify mt-1.5 font-medium">
                                       {exp.description}
                                     </p>
                                   )}
@@ -3114,7 +3431,7 @@ export default function App() {
                                   {exp.bullets && exp.bullets.filter(b => b && b.trim() !== "").length > 0 && (
                                     <ul className="list-disc pl-3.5 mt-1.5 space-y-0.5">
                                       {exp.bullets.filter(b => b && b.trim() !== "").map((bullet, idx) => (
-                                        <li key={idx} style={{ fontSize: (fontSizeBody - 0.5) + "px", lineHeight: (customLineHeight / 100) }} className="leading-relaxed text-slate-500 font-medium">
+                                        <li key={idx} style={{ fontSize: (fontSizeBody - 0.5) + "px", lineHeight: (customLineHeight / 100), color: bodyTextColor, opacity: 0.8 }} className="leading-relaxed font-medium">
                                           {bullet}
                                         </li>
                                       ))}
@@ -3131,44 +3448,44 @@ export default function App() {
                           <div className="font-sans">
                             <div
                               style={{
-                                backgroundColor: primaryColor,
-                                color: getContrastColor(primaryColor),
+                                backgroundColor: sectionHeaderColor || primaryColor,
+                                color: getContrastColor(sectionHeaderColor || primaryColor),
                                 fontSize: fontSizeSection + "px"
                               }}
                               className="w-full py-1 px-4 text-center font-extrabold uppercase tracking-widest mb-4 shadow-sm rounded-sm"
                             >
                               FORMAÇÃO ACADÊMICA
                             </div>
-                            <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: getSecondaryColor(primaryColor, 0.25) }}>
+                            <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: getSecondaryColor(sectionHeaderColor || primaryColor, 0.25) }}>
                               {validEducation.map((edu) => (
-                                <div key={edu.id} className="relative print-break-avoid" style={{ color: "rgb(30, 41, 59)" }}>
+                                <div key={edu.id} className="relative print-break-avoid" style={{ color: bodyTextColor }}>
                                   {/* Círculo do marcador temporal na linha */}
                                   <div
                                     className="absolute -left-[26px] top-[2.5px] w-[10px] h-[10px] rounded-full border-2 bg-white"
-                                    style={{ borderColor: primaryColor }}
+                                    style={{ borderColor: companyRoleColor || primaryColor }}
                                   />
                                   <div className="flex justify-between items-start">
-                                    <strong style={{ color: primaryColor, fontSize: (fontSizeBody + 1.5) + "px" }} className="font-extrabold uppercase tracking-wide">
+                                    <strong style={{ color: companyRoleColor || primaryColor, fontSize: (fontSizeBody + 1.5) + "px" }} className="font-extrabold uppercase tracking-wide">
                                       {edu.degree}
                                     </strong>
-                                    <span style={{ fontSize: Math.max(7, fontSizeBody - 0.5) + "px" }} className="font-mono font-bold text-slate-500 whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded">
+                                    <span style={{ fontSize: Math.max(7, fontSizeBody - 0.5) + "px", color: periodTextColor || bodyTextColor, opacity: periodTextColor ? 1 : 0.8 }} className="font-mono font-bold whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded">
                                       {edu.period}
                                     </span>
                                   </div>
                                   {(edu.institution || edu.location || edu.status) && (
                                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                      <span style={{ fontSize: (fontSizeBody - 0.5) + "px" }} className="text-slate-500 font-bold uppercase tracking-wide">
-                                        {edu.institution} {edu.location && <span className="text-slate-400 font-normal">| {edu.location}</span>}
+                                      <span style={{ fontSize: (fontSizeBody - 0.5) + "px", color: bodyTextColor, opacity: 0.75 }} className="font-bold uppercase tracking-wide">
+                                        {edu.institution} {edu.location && <span className="opacity-60 font-normal">| {edu.location}</span>}
                                       </span>
                                       {edu.status && (
-                                        <span className="uppercase font-bold tracking-wider px-1 py-0.2 rounded" style={{ backgroundColor: getSecondaryColor(primaryColor, 0.08), color: primaryColor, fontSize: Math.max(6.5, fontSizeBody - 2) + "px" }}>
+                                        <span className="uppercase font-bold tracking-wider px-1 py-0.2 rounded" style={{ backgroundColor: getSecondaryColor(companyRoleColor || primaryColor, 0.08), color: companyRoleColor || primaryColor, fontSize: Math.max(6.5, fontSizeBody - 2) + "px" }}>
                                           {edu.status}
                                         </span>
                                       )}
                                     </div>
                                   )}
                                   {edu.description && (
-                                    <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-650 text-justify mt-1 font-medium">
+                                    <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100), color: bodyTextColor, opacity: 0.9 }} className="text-justify mt-1 font-medium">
                                       {edu.description}
                                     </p>
                                   )}
@@ -3183,8 +3500,8 @@ export default function App() {
                           <div className="font-sans print-break-avoid">
                             <div
                               style={{
-                                backgroundColor: primaryColor,
-                                color: getContrastColor(primaryColor),
+                                backgroundColor: sectionHeaderColor || primaryColor,
+                                color: getContrastColor(sectionHeaderColor || primaryColor),
                                 fontSize: fontSizeSection + "px"
                               }}
                               className="w-full py-1 px-4 text-center font-extrabold uppercase tracking-widest mb-3 shadow-sm rounded-sm"
@@ -3195,13 +3512,13 @@ export default function App() {
                               {validCourses.map((c) => (
                                 <div key={c.id} className="flex items-start justify-between gap-4">
                                   <div className="flex items-start gap-1.5 flex-1">
-                                    <span style={{ color: primaryColor, fontSize: fontSizeBody + "px" }} className="mt-0.5">•</span>
-                                    <span style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-650 text-justify">
+                                    <span style={{ color: companyRoleColor || primaryColor, fontSize: fontSizeBody + "px" }} className="mt-0.5">•</span>
+                                    <span style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100), color: bodyTextColor, opacity: 0.9 }} className="text-justify">
                                       {c.name}
                                     </span>
                                   </div>
                                   {c.year && (
-                                    <span style={{ fontSize: fontSizeBody + "px" }} className="text-slate-500 font-bold whitespace-nowrap">
+                                    <span style={{ fontSize: fontSizeBody + "px", color: periodTextColor || bodyTextColor, opacity: periodTextColor ? 1 : 0.75 }} className="font-bold whitespace-nowrap">
                                       ({c.year})
                                     </span>
                                   )}
@@ -3214,7 +3531,7 @@ export default function App() {
 
                       {/* Assinatura de rodapé */}
                       <div className="pt-2 border-t border-slate-150 flex items-center justify-between text-[7px] text-slate-400 font-sans uppercase tracking-wider">
-                        <span>Currículo de Alta Performance</span>
+                        <span />
                         <span>{cvData.name} • {new Date().getFullYear()}</span>
                       </div>
                     </div>
@@ -3421,13 +3738,32 @@ export default function App() {
                             >
                               HABILIDADES
                             </div>
-                            <div className="space-y-1.5 pl-0.5 text-left text-slate-900">
-                              {validSkills.map((sk) => (
-                                <div key={sk.id} style={{ fontSize: fontSizeSidebar + "px", lineHeight: (customLineHeight / 100) }} className="flex items-center gap-2 font-bold text-slate-900">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
-                                  <span>{sk.name}</span>
-                                </div>
-                              ))}
+                            <div className="space-y-3 pl-0.5 text-left text-slate-900">
+                              {(() => {
+                                const groups: { [key: string]: SkillItem[] } = {};
+                                validSkills.forEach((sk) => {
+                                  const cat = sk.category && sk.category.trim() !== "" ? sk.category.trim() : "Geral";
+                                  if (!groups[cat]) {
+                                    groups[cat] = [];
+                                  }
+                                  groups[cat].push(sk);
+                                });
+                                return Object.entries(groups).map(([categoryName, items]) => (
+                                  <div key={categoryName} className="space-y-1">
+                                    <h5 style={{ fontSize: Math.max(7, fontSizeSidebar - 1.5) + "px" }} className="font-extrabold uppercase tracking-wider opacity-70 text-black">
+                                      {categoryName}
+                                    </h5>
+                                    <div className="space-y-1 pl-1">
+                                      {items.map((sk) => (
+                                        <div key={sk.id} style={{ fontSize: fontSizeSidebar + "px", lineHeight: (customLineHeight / 100) }} className="flex items-center gap-1.5 font-bold text-slate-900">
+                                          <span className="w-1 h-1 rounded-full bg-black shrink-0" />
+                                          <span>{sk.name}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
                             </div>
                           </div>
                         )}
@@ -3494,13 +3830,13 @@ export default function App() {
                         {/* Bloco de Nome e Título P&B */}
                         <div className="flex flex-col pb-1 text-left">
                           <h1
-                            style={{ fontSize: fontSizeName + "px" }}
-                            className="font-black uppercase tracking-wide leading-none font-sans text-black text-left"
+                            style={{ fontSize: fontSizeName + "px", color: nameColor || "#000000" }}
+                            className="font-black uppercase tracking-wide leading-none font-sans text-left"
                           >
                             {cvData.name}
                           </h1>
                           {cvData.title && (
-                            <p style={{ fontSize: fontSizeTitle + "px" }} className="text-slate-800 uppercase tracking-widest font-extrabold mt-1.5 font-sans text-left">
+                            <p style={{ fontSize: fontSizeTitle + "px", color: titleColor || "rgb(30, 41, 59)" }} className="uppercase tracking-widest font-extrabold mt-1.5 font-sans text-left">
                               {cvData.title}
                             </p>
                           )}
@@ -3513,7 +3849,7 @@ export default function App() {
                               style={{
                                 borderLeftWidth: bwBorderStyle === "double" ? "4px" : "3px",
                                 borderLeftStyle: bwBorderStyle,
-                                borderColor: "#000000",
+                                borderColor: sectionHeaderColor || "#000000",
                                 backgroundColor: "rgba(240, 244, 248, 0.45)",
                               }}
                               className="p-4 rounded-r-lg"
@@ -3532,26 +3868,27 @@ export default function App() {
                               style={{
                                 borderBottomWidth: bwBorderStyle === "double" ? "3px" : "1px",
                                 borderBottomStyle: bwBorderStyle,
-                                borderColor: "#000000",
+                                borderColor: sectionHeaderColor || "#000000",
+                                color: sectionHeaderColor || "#000000",
                                 fontSize: fontSizeSection + "px"
                               }}
-                              className="w-full pb-1 font-extrabold uppercase tracking-widest mb-4 text-black text-left"
+                              className="w-full pb-1 font-extrabold uppercase tracking-widest mb-4 text-left"
                             >
                               EXPERIÊNCIA PROFISSIONAL
                             </div>
-                            <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: "rgba(0, 0, 0, 0.25)" }}>
+                            <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: sectionHeaderColor ? getSecondaryColor(sectionHeaderColor, 0.25) : "rgba(0, 0, 0, 0.25)" }}>
                               {validExperience.map((exp) => (
                                 <div key={exp.id} className="relative print-break-avoid font-sans">
                                   {/* Círculo do marcador temporal na linha */}
                                   <div
                                     className="absolute -left-[26px] top-[2.5px] w-[10px] h-[10px] rounded-full border bg-white"
-                                    style={{ borderColor: "#000000", borderWidth: "2px" }}
+                                    style={{ borderColor: companyRoleColor || "#000000", borderWidth: "2px" }}
                                   />
                                   <div className="flex justify-between items-start font-sans">
-                                    <strong style={{ fontSize: (fontSizeBody + 1.5) + "px" }} className="font-extrabold uppercase tracking-wide text-black">
+                                    <strong style={{ fontSize: (fontSizeBody + 1.5) + "px", color: companyRoleColor || "#000000" }} className="font-extrabold uppercase tracking-wide">
                                       {exp.role}
                                     </strong>
-                                    <span style={{ fontSize: Math.max(7.5, fontSizeBody - 0.5) + "px" }} className="font-mono font-bold text-slate-800 whitespace-nowrap">
+                                    <span style={{ fontSize: Math.max(7.5, fontSizeBody - 0.5) + "px", color: periodTextColor || "rgb(30, 41, 59)" }} className="font-mono font-bold whitespace-nowrap">
                                       {exp.period}
                                     </span>
                                   </div>
@@ -3560,13 +3897,13 @@ export default function App() {
                                       {exp.company} {exp.location && <span className="text-slate-600 font-bold">| {exp.location}</span>}
                                     </p>
                                   )}
-                                  
+
                                   {exp.description && (
                                     <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-800 text-justify mt-1.5 font-semibold">
                                       {exp.description}
                                     </p>
                                   )}
-                                  
+
                                   {exp.bullets && exp.bullets.filter(b => b && b.trim() !== "").length > 0 && (
                                     <ul className="list-disc pl-3.5 mt-1.5 space-y-0.5">
                                       {exp.bullets.filter(b => b && b.trim() !== "").map((bullet, idx) => (
@@ -3589,26 +3926,27 @@ export default function App() {
                               style={{
                                 borderBottomWidth: bwBorderStyle === "double" ? "3px" : "1px",
                                 borderBottomStyle: bwBorderStyle,
-                                borderColor: "#000000",
+                                borderColor: sectionHeaderColor || "#000000",
+                                color: sectionHeaderColor || "#000000",
                                 fontSize: fontSizeSection + "px"
                               }}
-                              className="w-full pb-1 font-extrabold uppercase tracking-widest mb-4 text-black text-left"
+                              className="w-full pb-1 font-extrabold uppercase tracking-widest mb-4 text-left"
                             >
                               FORMAÇÃO ACADÊMICA
                             </div>
-                            <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: "rgba(0, 0, 0, 0.25)" }}>
+                            <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: sectionHeaderColor ? getSecondaryColor(sectionHeaderColor, 0.25) : "rgba(0, 0, 0, 0.25)" }}>
                               {validEducation.map((edu) => (
                                 <div key={edu.id} className="relative print-break-avoid" style={{ color: "rgb(15, 23, 42)" }}>
                                   {/* Círculo do marcador temporal na linha */}
                                   <div
                                     className="absolute -left-[26px] top-[2.5px] w-[10px] h-[10px] rounded-full border bg-white"
-                                    style={{ borderColor: "#000000", borderWidth: "2px" }}
+                                    style={{ borderColor: companyRoleColor || "#000000", borderWidth: "2px" }}
                                   />
                                   <div className="flex justify-between items-start font-sans">
-                                    <strong style={{ fontSize: (fontSizeBody + 1.5) + "px" }} className="font-extrabold uppercase tracking-wide text-black font-sans">
+                                    <strong style={{ fontSize: (fontSizeBody + 1.5) + "px", color: companyRoleColor || "#000000" }} className="font-extrabold uppercase tracking-wide font-sans">
                                       {edu.degree}
                                     </strong>
-                                    <span style={{ fontSize: Math.max(7.5, fontSizeBody - 0.5) + "px" }} className="font-mono font-bold text-slate-800 whitespace-nowrap">
+                                    <span style={{ fontSize: Math.max(7.5, fontSizeBody - 0.5) + "px", color: periodTextColor || "rgb(30, 41, 59)" }} className="font-mono font-bold whitespace-nowrap">
                                       {edu.period}
                                     </span>
                                   </div>
@@ -3642,10 +3980,11 @@ export default function App() {
                               style={{
                                 borderBottomWidth: bwBorderStyle === "double" ? "3px" : "1px",
                                 borderBottomStyle: bwBorderStyle,
-                                borderColor: "#000000",
+                                borderColor: sectionHeaderColor || "#000000",
+                                color: sectionHeaderColor || "#000000",
                                 fontSize: fontSizeSection + "px"
                               }}
-                              className="w-full pb-1 font-extrabold uppercase tracking-widest mb-3 text-black text-left"
+                              className="w-full pb-1 font-extrabold uppercase tracking-widest mb-3 text-left"
                             >
                               CURSOS &amp; ATIVIDADES COMPLEMENTARES
                             </div>
@@ -3653,13 +3992,13 @@ export default function App() {
                               {validCourses.map((c) => (
                                 <div key={c.id} className="flex items-start justify-between gap-4">
                                   <div className="flex items-start gap-1.5 flex-1">
-                                    <span className="text-black font-extrabold" style={{ fontSize: fontSizeBody + "px" }}>•</span>
+                                    <span style={{ color: companyRoleColor || "#000000", fontSize: fontSizeBody + "px" }} className="font-extrabold">•</span>
                                     <span style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-800 text-justify">
                                       {c.name}
                                     </span>
                                   </div>
                                   {c.year && (
-                                    <span style={{ fontSize: fontSizeBody + "px" }} className="text-slate-800 font-bold whitespace-nowrap">
+                                    <span style={{ fontSize: fontSizeBody + "px", color: periodTextColor || "rgb(30, 41, 59)" }} className="font-bold whitespace-nowrap">
                                       ({c.year})
                                     </span>
                                   )}
@@ -3682,7 +4021,7 @@ export default function App() {
                       }}
                       className="pt-2 flex items-center justify-between text-[7.5px] text-slate-600 font-sans uppercase tracking-wider mt-4"
                     >
-                      <span>Currículo de Alta Performance P&amp;B</span>
+                      <span />
                       <span>{cvData.name} • {new Date().getFullYear()}</span>
                     </div>
                   </div>
@@ -3707,7 +4046,7 @@ export default function App() {
             <Edit3 size={13} />
             <span>1. Escrever Informações</span>
           </button>
-          
+
           <button
             onClick={() => setMobileSubView("preview")}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all relative ${
@@ -3726,57 +4065,101 @@ export default function App() {
         </div>
       )}
       {showPrintHelper && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 print:hidden">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100 font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 print:hidden">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-slate-100 font-sans animate-fade-in">
             <button
               onClick={() => setShowPrintHelper(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-slate-450 hover:text-white transition-colors p-1 bg-slate-800 hover:bg-slate-750 rounded-lg"
               title="Fechar"
             >
               <X size={16} />
             </button>
 
-            <div className="flex items-center gap-2.5 text-emerald-400 mb-4">
-              <Printer size={20} />
-              <h3 className="font-extrabold uppercase tracking-wider text-sm font-sans">Assistente de PDF</h3>
+            <div className="flex items-center gap-2.5 text-blue-400 mb-2">
+              <Sparkle className="text-blue-400 fill-blue-400 shrink-0" size={18} />
+              <h3 className="font-extrabold uppercase tracking-wider text-sm font-sans">Como deseja exportar seu currículo?</h3>
             </div>
 
-            <p className="text-slate-300 text-xs leading-relaxed mb-4">
-              O navegador pode ter limitado a pré-visualização ou download direto do PDF dentro do iframe do AI Studio.
+            <p className="text-slate-400 text-xs mb-5">
+              Escolha a melhor opção de exportação de acordo com o seu objetivo de contratação.
             </p>
 
-            <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/40 space-y-2 mb-5">
-              <div className="flex gap-2 items-start text-xs text-slate-400">
-                <span className="bg-emerald-500/20 text-emerald-400 font-mono text-[10px] w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5">1</span>
-                <span>Tente no botão **Baixar PDF Direto** para gerar o documento localmente.</span>
+            <div className="space-y-4 mb-6">
+              {/* Opção 1: Impressão Nativa (Texto Selecionável / Otimizado para IA de RH) */}
+              <div className="bg-slate-950/60 p-4 rounded-xl border border-blue-500/30 hover:border-blue-500/50 transition-all flex flex-col justify-between">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-blue-500 text-slate-950 font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Recomendado para Gupy &amp; ATS
+                  </span>
+                  <span className="text-[10px] text-blue-300 font-mono">100% Leitura IA</span>
+                </div>
+                <h4 className="text-xs font-bold text-slate-100 mb-1 flex items-center gap-1.5">
+                  <Printer size={13} className="text-blue-400" />
+                  <span>Salvar como PDF via Navegador (PDF de Texto Vetorial)</span>
+                </h4>
+                <p className="text-[11px] text-slate-300 leading-relaxed mb-3">
+                  Gera um documento PDF com **texto real e selecionável**. É o formato que as IAs de recrutamento (Gupy, LinkedIn, Kenoby) usam para ler, indexar e pontuar suas habilidades automaticamente.
+                </p>
+                <div className="bg-blue-950/30 rounded-lg p-2.5 border border-blue-900/40 text-[10px] text-slate-350 space-y-1 mb-3">
+                  <p className="font-bold text-blue-300">💡 Instruções para o layout perfeito:</p>
+                  <p>1. Na janela de impressão que abrir, escolha a impressora **Salvar como PDF**.</p>
+                  <p>2. Em Mais Definições: defina **Margens como Nenhuma** e desmarque **Cabeçalhos e rodapés**.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowPrintHelper(false);
+                    setTimeout(() => {
+                      try {
+                        window.focus();
+                        window.print();
+                      } catch (err) {
+                        console.warn("Blocked print trigger:", err);
+                      }
+                    }, 200);
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-xs flex justify-center items-center gap-1.5 transition-all shadow-md shadow-blue-900/25"
+                >
+                  <Printer size={13} />
+                  <span>Iniciar Impressora do Navegador</span>
+                </button>
               </div>
-              <div className="flex gap-2 items-start text-xs text-slate-400">
-                <span className="bg-emerald-500/20 text-emerald-400 font-mono text-[10px] w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5">2</span>
-                <span>Se persistir, clique em **Abrir em Nova Guia** para realizar o download livre de restrições do iframe!</span>
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  handlePrint();
-                  setShowPrintHelper(false);
-                }}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-2.5 rounded-xl text-xs flex justify-center items-center gap-1.5 shadow-lg shadow-emerald-500/10 transition-all border border-emerald-400"
-              >
-                <Check size={14} />
-                <span>Baixar PDF Direto</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  window.open(window.location.href, '_blank');
-                  setShowPrintHelper(false);
-                }}
-                className="w-full bg-slate-800 hover:bg-slate-705 text-slate-300 font-bold py-2 rounded-xl text-xs transition-all border border-slate-700"
-              >
-                Abrir em Nova Guia e Baixar
-              </button>
+              {/* Opção 2: Download Direto como Imagem (PDF de Imagem Rápido) */}
+              <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800 hover:border-slate-750 transition-all">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-slate-800 text-slate-400 font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Envio Direto
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">Útil para WhatsApp / E-mail</span>
+                </div>
+                <h4 className="text-xs font-bold text-slate-200 mb-1 flex items-center gap-1.5">
+                  <Check size={13} className="text-emerald-400" />
+                  <span>Download Direto (PDF de Imagem de Alta Resolução)</span>
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
+                  Converte o visual do currículo em uma imagem de alta definição encapsulada em um arquivo PDF. Perfeito para manter a fidelidade visual exata ao enviar direto para pessoas, mas não possui texto selecionável.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      setShowPrintHelper(false);
+                      setTimeout(() => handlePrint(), 100);
+                    }}
+                    className="bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold py-2 rounded-lg text-xs flex justify-center items-center gap-1 transition-all"
+                  >
+                    <span>Baixar PDF Direto</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPrintHelper(false);
+                      window.open(window.location.href, '_blank');
+                    }}
+                    className="bg-slate-950/60 hover:bg-slate-900 text-slate-400 font-medium py-2 rounded-lg text-xs flex justify-center items-center gap-1 transition-all border border-slate-800"
+                  >
+                    <span>Abrir em Nova Guia</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
