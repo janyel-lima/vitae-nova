@@ -136,9 +136,9 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
 
     const replacement = before + selected + after;
     const newValue = text.substring(0, start) + replacement + text.substring(end);
-
+    
     onChange(newValue);
-
+    
     // Restore selection/focus after state update on next tick
     setTimeout(() => {
       textarea.focus();
@@ -155,7 +155,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
     const end = textarea.selectionEnd;
     const text = textarea.value;
     const selected = text.substring(start, end);
-
+    
     if (selected.includes("\n")) {
       const updated = selected.split("\n").map(line => line.startsWith("• ") ? line : "• " + line).join("\n");
       insertText("", updated);
@@ -180,7 +180,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
     <div className="space-y-1.5" id={id}>
       <div className="flex items-center justify-between">
         <label className="block text-[10px] font-bold uppercase text-slate-400">{label}</label>
-
+        
         {/* Editor Toolbar with non-technical, user-friendly tags */}
         <div className="flex items-center gap-1 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-900/80">
           <button
@@ -227,7 +227,7 @@ const AdvancedTextarea: React.FC<AdvancedTextareaProps> = ({
           rows={rows}
           className="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 rounded p-2 text-xs text-slate-200 outline-none resize-none leading-relaxed focus:ring-1 focus:ring-blue-500/20"
         />
-
+        
         {/* Helper Badge */}
         <div className="absolute right-2 bottom-1.5 text-[8px] text-slate-500 select-none pointer-events-none group-focus-within:opacity-0 transition-opacity">
           Editor Avançado ✨
@@ -532,7 +532,7 @@ export default function App() {
   const [fontSizeScale, setFontSizeScale] = useState<"xs" | "sm" | "md" | "lg">("sm");
   const [lineHeightScale, setLineHeightScale] = useState<"tight" | "normal" | "relaxed">("normal");
   const [sectionMargin, setSectionMargin] = useState<"tight" | "normal" | "relaxed">("normal");
-
+  
   // Section visibility states (Simple language toggles)
   const [hidePicture, setHidePicture] = useState<boolean>(false);
   const [hideObjective, setHideObjective] = useState<boolean>(false);
@@ -671,17 +671,17 @@ export default function App() {
       const step = currentSteps[tourStep];
       if (!step) return;
       const element = document.getElementById(step.anchorId);
-
+      
       if (element) {
         // Scroll target element gently into view if needed
         element.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
-
+        
         const rect = element.getBoundingClientRect();
         setHighlightRect(rect);
 
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-
+        
         let top = rect.bottom + window.scrollY + 12;
         let left = rect.left + window.scrollX + (rect.width / 2) - 180;
         let placement = "bottom";
@@ -701,11 +701,11 @@ export default function App() {
             left = rect.right + window.scrollX + 20;
             placement = "right";
           } else if (
-            step.anchorId === "tab-contato" ||
-            step.anchorId === "tab-perfil" ||
-            step.anchorId === "tab-estudos" ||
-            step.anchorId === "tab-carreiras" ||
-            step.anchorId === "tab-habilidades" ||
+            step.anchorId === "tab-contato" || 
+            step.anchorId === "tab-perfil" || 
+            step.anchorId === "tab-estudos" || 
+            step.anchorId === "tab-carreiras" || 
+            step.anchorId === "tab-habilidades" || 
             step.anchorId === "tab-personalizacao"
           ) {
             top = rect.top + window.scrollY - 10;
@@ -722,8 +722,8 @@ export default function App() {
           }
         } else {
           // Mobile responsive layout
-          top = rect.top > viewportHeight / 2
-            ? rect.top + window.scrollY - 220
+          top = rect.top > viewportHeight / 2 
+            ? rect.top + window.scrollY - 220 
             : rect.bottom + window.scrollY + 12;
           left = rect.left + window.scrollX + (rect.width / 2) - 170;
           placement = rect.top > viewportHeight / 2 ? "top" : "bottom";
@@ -753,7 +753,7 @@ export default function App() {
 
     window.addEventListener("resize", updateTourGeometry);
     window.addEventListener("scroll", updateTourGeometry, { passive: true });
-
+    
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -764,7 +764,10 @@ export default function App() {
 
   // Live height analyzer ref for printing fit checks
   const cvSheetRef = useRef<HTMLDivElement>(null);
+  const a4PageHeightRef = useRef<HTMLDivElement>(null);
   const [hasOverflowWarning, setHasOverflowWarning] = useState<boolean>(false);
+  const [numPages, setNumPages] = useState<number>(1);
+  const [pageBreakOffsets, setPageBreakOffsets] = useState<{[key: string]: number}>({});
 
   // Persistent storage
   useEffect(() => {
@@ -811,24 +814,75 @@ export default function App() {
     bwPhotoGrayscale
   ]);
 
-  // Check element sizing for potential overflows relative to typical A4 page proportions
+  // Analyze and handle custom page breaks and dynamic full page rendering
   useEffect(() => {
-    const checkHeight = () => {
-      if (cvSheetRef.current) {
-        // High fidelity ratio simulation for A4. Height in standard display should not exceed ~1130px
-        // to avoid spilling onto page 2 unexpectedly.
-        const height = cvSheetRef.current.scrollHeight;
-        if (height > 1150) {
-          setHasOverflowWarning(true);
-        } else {
-          setHasOverflowWarning(false);
+    const adjustBreaksAndPages = () => {
+      if (!cvSheetRef.current) return;
+      
+      const container = cvSheetRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const containerTop = containerRect.top;
+      
+      // Get the precise pixel height representing exactly 297mm on the current device screen
+      const pageHeightPx = a4PageHeightRef.current ? a4PageHeightRef.current.offsetHeight : 1122.5;
+      
+      // Select all adjustable items inside the document
+      const items = container.querySelectorAll(".cv-item-to-adjust");
+      
+      // Temporarily reset all custom inline margins to 0 for pristine base measurements
+      items.forEach((el) => {
+        (el as HTMLElement).style.marginTop = "0px";
+      });
+      
+      const newOffsets: {[key: string]: number} = {};
+      let maxContentHeight = 0;
+      
+      // Sequentially evaluate and apply margins so downstream elements cascade naturally
+      items.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        const id = htmlEl.getAttribute("data-id") || "";
+        if (!id) return;
+        
+        const rect = htmlEl.getBoundingClientRect();
+        const elementTopRelative = rect.top - containerTop;
+        const elementHeight = rect.height;
+        
+        // Find the page index boundary this element currently intersects
+        const pageIndex = Math.floor(elementTopRelative / pageHeightPx);
+        const nextPageBoundary = (pageIndex + 1) * pageHeightPx;
+        
+        // If the element crosses a page boundary, push it entirely to the next page
+        if (elementTopRelative < nextPageBoundary && (elementTopRelative + elementHeight) > nextPageBoundary) {
+          const pushAmount = nextPageBoundary - elementTopRelative;
+          // Apply standard boundary thresholds to prevent massive voids
+          if (pushAmount > 0 && pushAmount < pageHeightPx) {
+            newOffsets[id] = pushAmount;
+            // Apply immediately to DOM for subsequent sequential measurements
+            htmlEl.style.marginTop = `${pushAmount}px`;
+          }
         }
+        
+        // Track the overall furthest bottom coordinate of any item to determine page count
+        const currentBottom = (htmlEl.getBoundingClientRect().top - containerTop) + htmlEl.getBoundingClientRect().height;
+        if (currentBottom > maxContentHeight) {
+          maxContentHeight = currentBottom;
+        }
+      });
+      
+      if (maxContentHeight === 0) {
+        maxContentHeight = container.scrollHeight;
       }
+      
+      // Decide the integer count of sheets required to render the full length
+      const calculatedPages = Math.max(1, Math.ceil(maxContentHeight / pageHeightPx));
+      
+      setNumPages(calculatedPages);
+      setPageBreakOffsets(newOffsets);
+      setHasOverflowWarning(calculatedPages > 1);
     };
-    checkHeight();
 
-    // Add brief timing trigger to check after state updates
-    const timer = setTimeout(checkHeight, 300);
+    // Run after a brief delay to allow React state changes to settle in the layout
+    const timer = setTimeout(adjustBreaksAndPages, 300);
     return () => clearTimeout(timer);
   }, [
     cvData,
@@ -863,7 +917,7 @@ export default function App() {
     setIsGeneratingPdf(true);
     try {
       const element = cvSheetRef.current;
-
+      
       // Give the browser a brief moment to update any visual details
       await new Promise((resolve) => setTimeout(resolve, 150));
 
@@ -893,7 +947,7 @@ export default function App() {
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-
+      
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
       const imgHeightInPdf = (canvasHeight * pdfWidth) / canvasWidth;
@@ -1233,7 +1287,10 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-300 print:bg-white print:text-black antialiased selection:bg-blue-600 selection:text-white">
-
+      
+      {/* Hidden A4 element used strictly as a physical screen pixel measurement context */}
+      <div ref={a4PageHeightRef} style={{ height: "297mm", position: "absolute", visibility: "hidden", pointerEvents: "none" }} />
+      
       {/* Dynamic Native Styling Block strictly for A4 physical outputs */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@400;500;700&display=swap');
@@ -1294,7 +1351,7 @@ export default function App() {
             page-break-inside: avoid !important;
           }
         }
-
+        
         .a4-container {
           width: 210mm;
           min-height: 297mm;
@@ -1416,7 +1473,7 @@ export default function App() {
               <Sparkle className="text-blue-400 fill-blue-400 animate-pulse shrink-0" size={16} />
               <span className="truncate">{currentSteps[tourStep].title}</span>
             </h4>
-
+            
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
               {currentSteps[tourStep].text}
             </p>
@@ -1431,7 +1488,7 @@ export default function App() {
                 <ChevronLeft size={14} />
                 <span>Anterior</span>
               </button>
-
+              
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setTourStep(null)}
@@ -1488,8 +1545,8 @@ export default function App() {
             </div>
           </div>
 
-          <div
-            id="style-tab-trigger"
+          <div 
+            id="style-tab-trigger" 
             className={`flex flex-wrap items-center justify-center lg:justify-end gap-2.5 transition-all duration-300 w-full lg:w-auto ${
               tourStep === 0
                 ? "ring-4 ring-sky-500 ring-offset-4 ring-offset-slate-950 rounded-2xl scale-[1.01] bg-sky-950/30 p-0.5"
@@ -1582,8 +1639,8 @@ export default function App() {
 
       {/* ⚠️ LIVE COMPACTNESS BAR / A4 PROPORTION ANALYZER (PRINT-HIDDEN) */}
       <div className="bg-slate-900 border-b border-slate-900 px-4 py-1.5 flex justify-center items-center gap-4 text-xs print:hidden">
-        <div
-          id="overflow-badge"
+        <div 
+          id="overflow-badge" 
           className={`flex items-center gap-2 p-1 rounded-lg transition-all duration-300 ${
             tourStep !== null && currentSteps[tourStep]?.anchorId === "overflow-badge"
               ? "ring-4 ring-offset-2 ring-offset-slate-900 ring-rose-500 scale-105 bg-rose-950/20"
@@ -1609,14 +1666,14 @@ export default function App() {
 
       {/* 📦 CONTENT DIVISION: CONTROLS & RENDER HOUSINGS */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden print:overflow-visible">
-
+        
         {/* 🛠️ EDIT PANEL (LEFT SIDEBAR, COLLAPSED IF NOT EDITING) */}
         {isEditing && (
           <aside className={`w-full lg:w-[460px] bg-slate-950 border-r border-slate-900 flex flex-col overflow-hidden leading-relaxed shrink-0 print:hidden ${mobileSubView === "edit" ? "flex" : "hidden lg:flex"}`}>
-
+            
             {/* Tabs for Sidebar items control */}
-            <div
-              id="panel-tabs"
+            <div 
+              id="panel-tabs" 
               className="border-b border-slate-900 bg-slate-950 p-2.5 grid grid-cols-3 gap-1.5 transition-all duration-300"
             >
               <button
@@ -1708,7 +1765,7 @@ export default function App() {
 
             {/* Sidebar Scroll Area */}
             <div className="flex-1 overflow-y-auto custom-scroll p-4 space-y-4">
-
+              
               {/* TAB 1: CONTATO */}
               {activeTab === "contato" && (
                 <div className="space-y-3.5">
@@ -1720,7 +1777,7 @@ export default function App() {
                   {/* DRAG & DROP PHOTO UPLOADER */}
                   <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-900 space-y-2">
                     <label className="block text-[10px] font-bold uppercase text-slate-400">Minha Foto de Perfil</label>
-
+                    
                     <div
                       onDragEnter={handleDrag}
                       onDragOver={handleDrag}
@@ -1767,7 +1824,7 @@ export default function App() {
                       Dica: Use uma foto bem iluminada de rosto (estilo Susan McFly).
                     </p>
                   </div>
-
+                  
                   <div>
                     <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Meu Nome Completo</label>
                     <input
@@ -1868,7 +1925,7 @@ export default function App() {
 
                   <div className="border-t border-slate-900 pt-3 mt-1 space-y-3">
                     <label className="block text-[10px] font-bold uppercase text-slate-300">Minhas Redes Sociais extras</label>
-
+                    
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="block text-[9px] font-medium text-slate-400 uppercase mb-1">Instagram</label>
@@ -1953,7 +2010,7 @@ export default function App() {
                           <span className="text-[10px] bg-blue-900/40 text-blue-400 font-bold px-2 py-0.5 rounded border border-blue-800/25">
                             Formação #{index + 1}
                           </span>
-
+                          
                           <div className="flex items-center gap-1.5">
                             {/* Reordering Controls */}
                             <button
@@ -1972,7 +2029,7 @@ export default function App() {
                             >
                               <ArrowDown size={11} />
                             </button>
-
+                            
                             <button
                               onClick={() => handleDeleteEdu(item.id)}
                               className="text-red-400 hover:bg-red-950/40 p-1 rounded"
@@ -2074,7 +2131,7 @@ export default function App() {
                           <span className="text-[10px] bg-indigo-900/30 text-indigo-400 px-2 py-0.5 rounded border border-indigo-800/35">
                             Cargo #{index + 1}
                           </span>
-
+                          
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => moveExperience(index, "up")}
@@ -2090,7 +2147,7 @@ export default function App() {
                             >
                               <ArrowDown size={11} />
                             </button>
-
+                            
                             <button
                               onClick={() => handleDeleteExp(item.id)}
                               className="text-red-400 hover:bg-red-950/40 p-1 rounded"
@@ -2163,7 +2220,7 @@ export default function App() {
                               <Plus size={10} /> Adicionar Tópico
                             </button>
                           </div>
-
+                          
                           {item.bullets.map((bullet, bIdx) => (
                             <div key={bIdx} className="flex items-center gap-1">
                               <input
@@ -2191,7 +2248,7 @@ export default function App() {
               {/* TAB 5: HABILIDADES */}
               {activeTab === "habilidades" && (
                 <div className="space-y-4">
-
+                  
                   {/* Skills lists section */}
                   <div className="space-y-3">
                     <div className="border-b border-slate-900 pb-2 flex justify-between items-center">
@@ -2218,7 +2275,7 @@ export default function App() {
                               className="bg-slate-950 font-semibold text-white text-xs px-2 py-1 rounded w-3/4 border border-slate-800"
                               placeholder="Nome da Habilidade"
                             />
-
+                            
                             <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => moveSkill(index, "up")}
@@ -2234,7 +2291,7 @@ export default function App() {
                               >
                                 <ArrowDown size={10} />
                               </button>
-
+                              
                               <button
                                 onClick={() => handleDeleteSkill(sk.id)}
                                 className="text-red-400 p-1 hover:bg-red-950/20 rounded"
@@ -2504,7 +2561,7 @@ export default function App() {
                       {/* Font Color overrides */}
                       <div className="pt-3 border-t border-slate-900 space-y-2.5">
                         <h5 className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">Ajuste Fino de Cores de Fontes</h5>
-
+                        
                         {/* Cor do texto do corpo */}
                         <div className="flex items-center justify-between bg-slate-950/40 p-2 rounded-lg border border-slate-900">
                           <div className="flex flex-col">
@@ -2768,8 +2825,8 @@ export default function App() {
                           key={fontItem.id}
                           onClick={() => setFontFamily(fontItem.id as any)}
                           className={`w-full text-left px-3 py-2 rounded text-xs font-bold flex items-center justify-between transition-colors ${
-                            fontFamily === fontItem.id
-                              ? "bg-blue-600 text-white"
+                            fontFamily === fontItem.id 
+                              ? "bg-blue-600 text-white" 
                               : "text-slate-100 hover:bg-slate-900 hover:text-white"
                           }`}
                         >
@@ -2918,7 +2975,7 @@ export default function App() {
                   {/* 5. TOGGLE CONTENT SECTIONS */}
                   <div className="space-y-2.5 bg-slate-900/60 p-3.5 rounded-xl border border-slate-900">
                     <h4 className="text-[10px] uppercase font-bold text-slate-300 mb-2">👁️ Mostrar ou Ocultar Seções</h4>
-
+                    
                     <label className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer hover:text-white">
                       <input
                         type="checkbox"
@@ -3002,7 +3059,7 @@ export default function App() {
                 </div>
               )}
             </div>
-
+            
             {/* Sidebar Sticky Footer info */}
             <div className="border-t border-slate-900 p-3.5 bg-slate-950 flex items-center justify-between text-[10px] text-slate-500">
               <span className="flex items-center gap-1">
@@ -3016,23 +3073,32 @@ export default function App() {
         {/* 📄 THE ACTUAL PREVIEW VIEWPORT AREA (CANVAS STAGE) */}
         <div className={`flex-1 p-3 md:p-8 bg-slate-900/40 flex justify-center items-start overflow-y-auto custom-scroll print:p-0 print:bg-white ${mobileSubView === "preview" || !isEditing ? "flex" : "hidden lg:flex"}`}>
           <div
+            id="cv-print-area"
             ref={cvSheetRef}
-            style={getFontFamilyStyle(fontFamily)}
+            style={{
+              ...getFontFamilyStyle(fontFamily),
+              minHeight: `${numPages * 297}mm`,
+              height: `${numPages * 297}mm`,
+            }}
             className="a4-container bg-white text-slate-800 shadow-2xl overflow-hidden flex flex-col justify-between border border-slate-200 print:shadow-none print:border-none print:m-0 print:rounded-none select-text relative"
           >
             {/* Visual Page Break Indicators (visible only in editor preview) */}
             {isEditing && (
               <>
-                <div className="absolute left-0 right-0 border-t-2 border-dashed border-red-500/30 pointer-events-none flex items-center justify-end pr-4 print:hidden z-40" style={{ top: "297mm" }}>
-                  <span className="bg-red-500/10 text-red-500 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-b border border-t-0 border-red-500/20 backdrop-blur-xs select-none">
-                    Fim da Página 1 / Início da Página 2
-                  </span>
-                </div>
-                <div className="absolute left-0 right-0 border-t-2 border-dashed border-slate-500/20 pointer-events-none flex items-center justify-end pr-4 print:hidden z-40" style={{ top: "594mm" }}>
-                  <span className="bg-slate-500/10 text-slate-400 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-b border border-t-0 border-slate-500/20 backdrop-blur-xs select-none">
-                    Fim da Página 2 / Início da Página 3
-                  </span>
-                </div>
+                {numPages >= 2 && (
+                  <div className="absolute left-0 right-0 border-t-2 border-dashed border-red-500/30 pointer-events-none flex items-center justify-end pr-4 print:hidden z-40" style={{ top: "297mm" }}>
+                    <span className="bg-red-500/10 text-red-500 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-b border border-t-0 border-red-500/20 backdrop-blur-xs select-none">
+                      Fim da Página 1 / Início da Página 2
+                    </span>
+                  </div>
+                )}
+                {numPages >= 3 && (
+                  <div className="absolute left-0 right-0 border-t-2 border-dashed border-slate-500/20 pointer-events-none flex items-center justify-end pr-4 print:hidden z-40" style={{ top: "594mm" }}>
+                    <span className="bg-slate-500/10 text-slate-400 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-b border border-t-0 border-slate-500/20 backdrop-blur-xs select-none">
+                      Fim da Página 2 / Início da Página 3
+                    </span>
+                  </div>
+                )}
               </>
             )}
 
@@ -3372,7 +3438,7 @@ export default function App() {
 
                         {/* Perfil Profissional / Resumo */}
                         {hasObjective && (
-                          <div className="print-break-avoid">
+                          <div className="print-break-avoid cv-item-to-adjust" data-id="obj-block" style={{ marginTop: pageBreakOffsets["obj-block"] ? `${pageBreakOffsets["obj-block"]}px` : undefined }}>
                             <div
                               style={{
                                 backgroundColor: "rgba(241, 245, 249, 0.75)",
@@ -3389,7 +3455,7 @@ export default function App() {
 
                         {/* Experiências Profissionais com Linha do Tempo e Conector */}
                         {hasExperience && (
-                          <div className="col-span-12 font-sans">
+                          <div className="col-span-12 font-sans cv-item-to-adjust" data-id="hdr-experience" style={{ marginTop: pageBreakOffsets["hdr-experience"] ? `${pageBreakOffsets["hdr-experience"]}px` : undefined }}>
                             <div
                               style={{
                                 backgroundColor: sectionHeaderColor || primaryColor,
@@ -3402,7 +3468,7 @@ export default function App() {
                             </div>
                             <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: getSecondaryColor(sectionHeaderColor || primaryColor, 0.25) }}>
                               {validExperience.map((exp) => (
-                                <div key={exp.id} className="relative print-break-avoid font-sans">
+                                <div key={exp.id} className="relative print-break-avoid font-sans cv-item-to-adjust" data-id={exp.id} style={{ marginTop: pageBreakOffsets[exp.id] ? `${pageBreakOffsets[exp.id]}px` : undefined }}>
                                   {/* Círculo do marcador temporal na linha */}
                                   <div
                                     className="absolute -left-[26px] top-[2.5px] w-[10px] h-[10px] rounded-full border-2 bg-white"
@@ -3421,7 +3487,7 @@ export default function App() {
                                       {exp.company} {exp.location && <span className="opacity-60 font-normal">| {exp.location}</span>}
                                     </p>
                                   )}
-
+                                  
                                   {exp.description && (
                                     <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100), color: bodyTextColor, opacity: 0.9 }} className="text-justify mt-1.5 font-medium">
                                       {exp.description}
@@ -3445,7 +3511,7 @@ export default function App() {
 
                         {/* Educação com Linha do Tempo e Conector */}
                         {hasEducation && (
-                          <div className="font-sans">
+                          <div className="font-sans cv-item-to-adjust" data-id="hdr-education" style={{ marginTop: pageBreakOffsets["hdr-education"] ? `${pageBreakOffsets["hdr-education"]}px` : undefined }}>
                             <div
                               style={{
                                 backgroundColor: sectionHeaderColor || primaryColor,
@@ -3458,7 +3524,7 @@ export default function App() {
                             </div>
                             <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: getSecondaryColor(sectionHeaderColor || primaryColor, 0.25) }}>
                               {validEducation.map((edu) => (
-                                <div key={edu.id} className="relative print-break-avoid" style={{ color: bodyTextColor }}>
+                                <div key={edu.id} className="relative print-break-avoid cv-item-to-adjust" data-id={edu.id} style={{ color: bodyTextColor, marginTop: pageBreakOffsets[edu.id] ? `${pageBreakOffsets[edu.id]}px` : undefined }}>
                                   {/* Círculo do marcador temporal na linha */}
                                   <div
                                     className="absolute -left-[26px] top-[2.5px] w-[10px] h-[10px] rounded-full border-2 bg-white"
@@ -3497,7 +3563,7 @@ export default function App() {
 
                         {/* Cursos e Atividades Complementares */}
                         {hasAdditional && (
-                          <div className="font-sans print-break-avoid">
+                          <div className="font-sans print-break-avoid cv-item-to-adjust" data-id="hdr-additional" style={{ marginTop: pageBreakOffsets["hdr-additional"] ? `${pageBreakOffsets["hdr-additional"]}px` : undefined }}>
                             <div
                               style={{
                                 backgroundColor: sectionHeaderColor || primaryColor,
@@ -3510,7 +3576,7 @@ export default function App() {
                             </div>
                             <div className="space-y-1.5 pl-1.5 font-medium">
                               {validCourses.map((c) => (
-                                <div key={c.id} className="flex items-start justify-between gap-4">
+                                <div key={c.id} className="flex items-start justify-between gap-4 cv-item-to-adjust" data-id={c.id} style={{ marginTop: pageBreakOffsets[c.id] ? `${pageBreakOffsets[c.id]}px` : undefined }}>
                                   <div className="flex items-start gap-1.5 flex-1">
                                     <span style={{ color: companyRoleColor || primaryColor, fontSize: fontSizeBody + "px" }} className="mt-0.5">•</span>
                                     <span style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100), color: bodyTextColor, opacity: 0.9 }} className="text-justify">
@@ -3844,7 +3910,7 @@ export default function App() {
 
                         {/* Perfil Profissional / Resumo P&B */}
                         {hasObjective && (
-                          <div className="print-break-avoid">
+                          <div className="print-break-avoid cv-item-to-adjust" data-id="obj-block-bw" style={{ marginTop: pageBreakOffsets["obj-block-bw"] ? `${pageBreakOffsets["obj-block-bw"]}px` : undefined }}>
                             <div
                               style={{
                                 borderLeftWidth: bwBorderStyle === "double" ? "4px" : "3px",
@@ -3863,7 +3929,7 @@ export default function App() {
 
                         {/* Experiências Profissionais P&B (sem badge no período) */}
                         {hasExperience && (
-                          <div className="col-span-12 font-sans">
+                          <div className="col-span-12 font-sans cv-item-to-adjust" data-id="hdr-experience-bw" style={{ marginTop: pageBreakOffsets["hdr-experience-bw"] ? `${pageBreakOffsets["hdr-experience-bw"]}px` : undefined }}>
                             <div
                               style={{
                                 borderBottomWidth: bwBorderStyle === "double" ? "3px" : "1px",
@@ -3878,7 +3944,7 @@ export default function App() {
                             </div>
                             <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: sectionHeaderColor ? getSecondaryColor(sectionHeaderColor, 0.25) : "rgba(0, 0, 0, 0.25)" }}>
                               {validExperience.map((exp) => (
-                                <div key={exp.id} className="relative print-break-avoid font-sans">
+                                <div key={exp.id} className="relative print-break-avoid font-sans cv-item-to-adjust" data-id={exp.id} style={{ marginTop: pageBreakOffsets[exp.id] ? `${pageBreakOffsets[exp.id]}px` : undefined }}>
                                   {/* Círculo do marcador temporal na linha */}
                                   <div
                                     className="absolute -left-[26px] top-[2.5px] w-[10px] h-[10px] rounded-full border bg-white"
@@ -3897,13 +3963,13 @@ export default function App() {
                                       {exp.company} {exp.location && <span className="text-slate-600 font-bold">| {exp.location}</span>}
                                     </p>
                                   )}
-
+                                  
                                   {exp.description && (
                                     <p style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-800 text-justify mt-1.5 font-semibold">
                                       {exp.description}
                                     </p>
                                   )}
-
+                                  
                                   {exp.bullets && exp.bullets.filter(b => b && b.trim() !== "").length > 0 && (
                                     <ul className="list-disc pl-3.5 mt-1.5 space-y-0.5">
                                       {exp.bullets.filter(b => b && b.trim() !== "").map((bullet, idx) => (
@@ -3921,7 +3987,7 @@ export default function App() {
 
                         {/* Educação P&B (sem badge no período e no status) */}
                         {hasEducation && (
-                          <div className="font-sans">
+                          <div className="font-sans cv-item-to-adjust" data-id="hdr-education-bw" style={{ marginTop: pageBreakOffsets["hdr-education-bw"] ? `${pageBreakOffsets["hdr-education-bw"]}px` : undefined }}>
                             <div
                               style={{
                                 borderBottomWidth: bwBorderStyle === "double" ? "3px" : "1px",
@@ -3936,7 +4002,7 @@ export default function App() {
                             </div>
                             <div className="relative pl-5 ml-2 border-l-2 space-y-4 text-left" style={{ borderColor: sectionHeaderColor ? getSecondaryColor(sectionHeaderColor, 0.25) : "rgba(0, 0, 0, 0.25)" }}>
                               {validEducation.map((edu) => (
-                                <div key={edu.id} className="relative print-break-avoid" style={{ color: "rgb(15, 23, 42)" }}>
+                                <div key={edu.id} className="relative print-break-avoid cv-item-to-adjust" data-id={edu.id} style={{ color: "rgb(15, 23, 42)", marginTop: pageBreakOffsets[edu.id] ? `${pageBreakOffsets[edu.id]}px` : undefined }}>
                                   {/* Círculo do marcador temporal na linha */}
                                   <div
                                     className="absolute -left-[26px] top-[2.5px] w-[10px] h-[10px] rounded-full border bg-white"
@@ -3975,7 +4041,7 @@ export default function App() {
 
                         {/* Cursos e Atividades Complementares P&B */}
                         {hasAdditional && (
-                          <div className="font-sans print-break-avoid">
+                          <div className="font-sans print-break-avoid cv-item-to-adjust" data-id="hdr-additional-bw" style={{ marginTop: pageBreakOffsets["hdr-additional-bw"] ? `${pageBreakOffsets["hdr-additional-bw"]}px` : undefined }}>
                             <div
                               style={{
                                 borderBottomWidth: bwBorderStyle === "double" ? "3px" : "1px",
@@ -3990,7 +4056,7 @@ export default function App() {
                             </div>
                             <div className="space-y-1.5 pl-1.5 font-semibold">
                               {validCourses.map((c) => (
-                                <div key={c.id} className="flex items-start justify-between gap-4">
+                                <div key={c.id} className="flex items-start justify-between gap-4 cv-item-to-adjust" data-id={c.id} style={{ marginTop: pageBreakOffsets[c.id] ? `${pageBreakOffsets[c.id]}px` : undefined }}>
                                   <div className="flex items-start gap-1.5 flex-1">
                                     <span style={{ color: companyRoleColor || "#000000", fontSize: fontSizeBody + "px" }} className="font-extrabold">•</span>
                                     <span style={{ fontSize: fontSizeBody + "px", lineHeight: (customLineHeight / 100) }} className="text-slate-800 text-justify">
@@ -4046,7 +4112,7 @@ export default function App() {
             <Edit3 size={13} />
             <span>1. Escrever Informações</span>
           </button>
-
+          
           <button
             onClick={() => setMobileSubView("preview")}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all relative ${
@@ -4079,7 +4145,7 @@ export default function App() {
               <Sparkle className="text-blue-400 fill-blue-400 shrink-0" size={18} />
               <h3 className="font-extrabold uppercase tracking-wider text-sm font-sans">Como deseja exportar seu currículo?</h3>
             </div>
-
+            
             <p className="text-slate-400 text-xs mb-5">
               Escolha a melhor opção de exportação de acordo com o seu objetivo de contratação.
             </p>
